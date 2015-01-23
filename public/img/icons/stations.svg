@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg onclick="parent.$.sidr((parent.sidebar == 0) ? 'open' : 'close', 'stat');" ontouchstart="parent.$.sidr((parent.sidebar == 0) ? 'open' : 'close', 'stat');" onmouseover="parent.$.sidr('open', 'stat');" width="30px" height="30px" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g strok1="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g transform="translate(-47, -435)" fill="#FFFFFF">
+            <path d="M47,453 L47,454 L49,454 L49,453 L49,447 L49,446 L47,446 L47,447 L47,453 Z M51,459 L51,460 L53,460 L53,459 L53,442 L53,441 L51,441 L51,442 L51,459 Z M55,462 L55,463 L57,463 L57,462 L57,438 L57,437 L55,437 L55,438 L55,462 Z M75,453 L75,454 L77,454 L77,453 L77,447 L77,446 L75,446 L75,447 L75,453 Z M71,459 L71,460 L73,460 L73,459 L73,442 L73,441 L71,441 L71,442 L71,459 Z M67,462 L67,463 L69,463 L69,462 L69,438 L69,437 L67,437 L67,438 L67,462 Z M59,464 L59,465 L61,465 L61,464 L61,436 L61,435 L59,435 L59,436 L59,464 Z M63,464 L63,465 L65,465 L65,464 L65,436 L65,435 L63,435 L63,436 L63,464 Z"></path>
+        </g>
+    </g>
+</svg>

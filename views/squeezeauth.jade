@@ -1,0 +1,11 @@
+doctype xml
+opml(version="1.1")
+  head
+    title Mesh - Login
+  body
+    if mode == 2
+      outline(text="Press +, Save to favorites", type="playlist", URL=url + "/stations/" + data + ".opml")
+    else if mode == 1
+      outline(text="Enter Password", type="search" URL=url + "/squeezebox/" + data + "/{QUERY}.opml" mime="text/x-opml")
+    else
+      outline(text="Enter Username", type="search" URL=url + "/squeezebox/{QUERY}.opml" mime="text/x-opml")

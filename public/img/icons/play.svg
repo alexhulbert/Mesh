@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg onclick="parent.play();" width="23px" height="40px" viewBox="0 0 23 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <defs></defs>
+    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g transform="translate(-697, -772)" fill="#FFFFFF">
+            <path d="M717.476659,792.091883 L718.183766,791.384776 L717.476659,790.67767 L699.091883,772.292893 L697.67767,773.707107 L716.062446,792.091883 L716.062446,790.67767 L697.67767,809.062446 L699.091883,810.476659 L717.476659,792.091883 Z"></path>
+        </g>
+    </g>
+</svg>

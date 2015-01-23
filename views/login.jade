@@ -1,0 +1,24 @@
+extends ./layout.jade
+
+block css
+ | /font/geometria/stylesheet.css
+ | /css/auth.css
+
+block content
+  #top
+    img#logo(src='/img/logo.svg')
+    span#url ME.SH
+  span#subtitle LOG IN
+  form#fields(method='post')
+    input#email.input(name='email')
+    label#uname.label YOUR EMAIL ADDRESS
+    input#password.input(type='password', name='password')
+    label#pass.label PASSWORD
+    #btn
+      button SUBMIT
+  if error != ''
+    script(type='text/javascript').
+      document.body.onload = function() {
+          document.body.setAttribute("class", "bad");
+      }
+    span#err #{error}

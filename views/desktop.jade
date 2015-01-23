@@ -1,0 +1,41 @@
+mixin icon(id, name, nonclickable)
+  object.icon(class=(nonclickable ? '' : 'clickable ') + (attributes.class || ''), id=id, type='image/svg+xml', data='/img/icons/#{name}.svg')
+mixin toScript
+  - var oldBuffer = buf;
+  - buf = []
+  - block()
+  - var lines = buf.join('').split('\n');
+  - buf = oldBuffer;
+  each script in lines
+    - script = script.trim();
+    if script != ''
+      if script.slice(-8) == ' dynamic'
+        script(type='text/javascript', src=script.slice(0, -8))
+      else
+        script(type='text/javascript', src=script)
+mixin toStyleSheet
+  - var oldBuffer = buf;
+  - buf = []
+  - block()
+  - var lines = buf.join('').split('\n');
+  - buf = oldBuffer;
+  each script in lines
+    - script = script.trim();
+    if script != ''
+      if script.slice(-8) == ' dynamic'
+        link(rel='stylesheet', type='text/css', href=script.slice(0, -8))
+      else
+        link(rel='stylesheet', type='text/css', href=script)
+
+doctype html
+html
+  head
+    link(rel='icon', type='image/png', href='/img/mesh.ico')
+    title Mesh - #{title}
+    +toScript
+      block scripts
+    +toStyleSheet
+      block css
+  body
+    block content
+  

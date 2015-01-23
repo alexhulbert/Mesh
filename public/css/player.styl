@@ -1,0 +1,454 @@
+@import('utils')
+
+clr = #7d1313
+
+@keyframes slideLeft
+  to
+    margin-left 3.25em
+    
+@keyframes slideCenter
+  to
+    margin-left 7.3125em
+    
+@keyframes fadeIn
+  to
+    opacity 1
+    
+@keyframes fadeOut
+  to
+    opacity 0
+  
+#player
+  height 100%
+#album
+  pos(50, 50, middle center, 50vh, 50vh)
+  background-size cover
+  z-index 2
+#logo
+  position absolute
+  margin auto
+  left 2.5vw
+  top 2.5vw
+  width 3em
+#stations
+  pos(2.5, 50, middle left, 3em, 3em)
+#songs
+  pos(97.5, 50, middle right, 3em, 3em)
+  height 3em
+#loading
+  z-index 3
+  background-color #D8D8D8
+  color #333
+  top 0
+  left 0
+  width 100%
+  height 100%
+  position absolute
+  #meshText
+    pos(50, 37.5, middle center, auto, 0)
+    font-size 5em
+  #caption
+    pos(50, 52.5, middle center, auto, 0)
+    font-size 3.5em
+  #loadLogo
+    pos(50, 25, middle center, 25vh, 25vh)
+  #centerText
+    pos(50, 75, middle center, auto, 0)
+    font-size 3em
+  #leftText
+    pos(25, 75, middle center, auto, 0)
+  #rightText
+    pos(75, 75, middle center, auto, 0)
+  .name
+    font-size 2.5em
+  .cap
+    font-size 2em
+#background
+  background-image radial-gradient(circle closest-side, (clr + 35%) 0%, clr 95%)
+  margin auto
+  top 0
+  bottom 0
+  left inherit
+  right inherit
+  position fixed
+  z-index -1
+#controls
+  pos(50, 75, middle top, 50vh, 7.5%)
+  vendor(box-sizing, border-box)
+#next
+  pos(95, 50, right middle, 1.75em, 1.75em)
+#back
+  pos(5, 50, left middle, 1.75em, 1.75em)
+#dislike
+  pos(30, 50, center middle, 1.75em, 1.75em)
+#like
+  pos(70, 50, center middle, 1.75em, 1.75em)
+#download
+  left   5vh
+  top    5vh
+  width  1.75em
+  height 1.75em
+  position absolute
+#play,#pause
+  pos(50, 50, center middle, 1.75em, 1.75em)
+  &.hidden
+    opacity 0
+    z-index -1
+#progress
+  pos(0, 0, top left, 100%, 0.2em)
+  margin-top -0.2em
+  z-index 3
+#search
+  display none
+  position absolute
+  right 2.5vw
+  width 22.5%
+  top 2.5vw
+  text-align left
+  margin 0
+  padding 0.25em 0.5em
+  font-size 2em
+  font-family inherit
+  font-weight 800
+  border solid 0.1em
+  opacity 0.6
+  color inherit
+#sag
+  pos(50, 25, bottom middle, 100vw, 12.5%)
+  display table
+#sagText
+  display table-cell
+  font-size 1.25em
+  vertical-align middle
+  text-align center
+#noalbum
+  pos(50, 50, middle center, 50vh, 50vh)
+  z-index 0
+#centerpiece
+  pos(50, 50, middle center, 40%, 40%)
+#scUp
+  pos(50, 0, middle top, 100%, 20%)
+#scDown
+  pos(50, 100, middle bottom, 100%, 20%)
+.sidr
+  display none
+  position fixed
+  top 0
+  height 100%
+  z-index 10
+  width 22.5em
+  overflow hidden
+  #scUp,#scDown
+    pointer-events none
+  .container
+    width 100%
+    height 100%
+    position absolute
+    overflow-y scroll
+    overflow-x hidden
+    overflow-y -moz-hidden-unscrollable
+    &::-webkit-scrollbar
+      display none
+#stat
+  left -22.5em
+  .container
+    vendor(box-shadow, inset -1.1em 0 1.25em -1em #000)
+#song
+  right -22.5em
+  .container
+    vendor(box-shadow, inset 1.1em 0 1.25em -1em #000)
+#feedbackBtn,#feedbackIcon
+  width  1.75em
+  height 1.75em
+  right  5vh
+  top    5vh
+  position absolute
+#volume
+  height 20%
+  width 15%
+  bottom 5%
+  right 5%
+  position absolute
+  vendor(mask, linear-gradient(
+    transparent  5%, #000  5%, #000 15%, transparent 15%,
+    transparent 25%, #000 25%, #000 35%, transparent 35%,
+    transparent 45%, #000 45%, #000 55%, transparent 55%,
+    transparent 65%, #000 65%, #000 75%, transparent 75%,
+    transparent 85%, #000 85%, #000 95%, transparent 95%
+  ))
+.clickable
+  cursor pointer
+  cursor hand
+
+.station,.song > div
+  cursor pointer
+  cursor hand
+  width 7.875em
+  height 7.875em
+  background-position-x center
+  box-sizing border-box
+  background-size 0
+  padding 0.5em
+  &.current
+    font-weight 400
+.station
+  &:last-child
+    margin-bottom 5vh
+  &.add
+    padding 1.5em
+    width 6.75em
+    height 6.75em
+    &:after
+      margin-top: 4vh
+      content "Add Station"
+    div:after
+      opacity 0
+  border-radius 100vw
+  &.current
+    margin-bottom 10vh
+    &:after
+      content "Now Playing\a" attr(title)
+      white-space pre
+      margin-top 2.5vh
+  margin 7vh auto 0 auto
+  span
+    cursor inherit
+    transition opacity 350ms
+    opacity 0
+    width 4em
+    height 4em
+    position absolute
+    border-radius inherit
+    margin-top 1.4375em
+    box-shadow 0 0 0 0.15em
+    vendor(box-sizing, border-box)
+    &.left
+      margin-left -6em
+      &:after
+        font-size 4em
+        position absolute
+        width 1em
+        text-align center
+        line-height 1em
+        content '\2716'
+    &.right
+      margin-left 6em
+  &:hover
+    span
+      opacity 1
+  div
+    background inherit
+    background-size cover
+    width 100%
+    height 100%
+    border-radius 100vw
+    &:after
+      width 100%
+      height 100%
+      background-color #444
+      opacity 0.4
+      border-radius 100vw
+      content ''
+      display block
+  &.current > div:after
+    opacity 0
+  &:after
+    content attr(title)
+    text-align center
+    position absolute
+    font-size: 1.25em
+    margin 1vh auto 0 auto
+    left 0
+    right 0
+.song
+  left 0
+  right 0
+  margin-top 5vh
+  vendor(transition, margin 350ms ease)
+  &.next
+    filter url('/img/filters.svg#grayscale')
+    vendor(filter, grayscale(100%))
+    opacity 0.95
+  &:last-child
+    margin-bottom 5vh
+  span
+    width 11.25em
+    position relative
+    span
+      display table
+      position absolute
+      margin 1em 0
+      width 22.5em
+      height auto
+      opacity 0
+      text-align center
+      vendor(transition, opacity 400ms ease-in 50ms)
+  div
+    vendor(transition, inherit)
+    margin 0 auto 0 7.3125em
+    &:after
+      width 100%
+      height 100%
+      display block
+      background inherit
+      background-size cover
+      content ''
+  &:hover
+    margin-bottom 5em
+    div
+      margin 0 auto 0 3.25em
+      vandor(transition, margin 400ms ease 50ms)
+    span
+      opacity 1
+      vendor(transition, opacity 350ms cubic-bezier(0.42, 1, 1, 1))
+
+#progress.bigHandle
+  border-radius 0 0 100vw 100vw
+  height 1em
+  opacity 0.75
+  margin-top 0
+  background none
+  .noUi-base
+    border-radius 0 0 100vw 100vw
+  .noUi-origin
+    border-radius 0 0 100vw 0
+  .noUi-handle
+    width 1em
+    height 1em
+    border-radius 100vw
+    margin-left -0.5em
+    overflow hidden
+    &:before
+      content ""
+      position absolute
+      left 21%
+      width 100%
+      height 200%
+      top 0
+      vendor(transform, rotate(45deg))
+
+body
+  font-family 'Geometria', 'Josefin Sans', 'Novecento Sans'
+  letter-spacing -0.025em
+  font-weight 300
+  margin 0
+  height 100% !important
+  overflow hidden
+  &.light
+    .station span
+      &:hover
+        color #D8D8D8
+      &:active
+        color #444
+    color #FFF
+    #progress
+      &.bigHandle .noUi-handle
+        background-color rgba(0, 0, 0, 0.325)
+      background-color #FFF
+      .noUi-background
+        background-color #0
+        .noUi-handle
+          background-color #7F7F7F
+    #noalbum
+      background-color #D8D8D8
+    .station.current
+      vendor(box-shadow, 0 0 0 0.15em #FFF)
+    .station.add
+      background-image url('/img/icons/add_light.svg')
+      vendor(box-shadow, 0 0 0 0.15em #FFF inset)
+    .song.current div
+      border 0.10em #FFF solid
+    .song.next div
+      border 0.10em #FFF dashed
+    #search
+      background #444
+      border-color #D8D8D8
+  &.dark
+    .station span
+      &:hover
+        color #444
+      &:active
+        color #CCC
+    color #000
+    #progress
+      &.bigHandle .noUi-handle
+        background-color rgba(255, 255, 255, 0.325)
+      background-color #000
+      .noUi-background
+        background-color #FFF
+        .noUi-handle
+          background-color #7F7F7F
+    #noalbum
+      background-color #444
+    .station.current
+      vendor(box-shadow, 0 0 0 0.15em #000)
+    .station.add
+      background-image url('/img/icons/add_dark.svg')
+      vendor(box-shadow, 0 0 0 0.15em #000 inset)
+    .song.current div
+      border 0.10em #000 solid
+    .song.next div
+      border 0.10em #000 dashed
+    #search
+      background #D8D8D8
+      border-color #444
+
+html.mobile
+  #album,#noalbum
+    width 66vmin
+    height 66vmin
+  #controls
+    top 50%
+    margin-top 33vmin
+    width 66vmin
+  body
+    zoom 66%
+      
+.noUi-target, .noUi-target *
+  vendor(touch-callout, none)
+  vendor(user-select, none)
+  vendor(touch-action, none)
+  vendor(box-sizing, border-box)
+.noUi-target
+	position: relative
+.noUi-base
+	width 100%
+	height 100%
+	position relative
+.noUi-origin
+	position absolute
+	right 0
+	top 0
+	left 0
+	bottom 0
+.noUi-handle
+	position relative
+	z-index 1;
+	height 0.2em;
+	width 1vh;
+	margin-left -0.5vh
+.noUi-stacking .noUi-handle
+  z-index 10
+.noUi-stacking + .noUi-origin
+  *z-index -1
+.noUi-state-tap .noUi-origin
+	transition left 0.3s, top 0.3s
+.noUi-state-drag *
+	cursor inherit !important
+.noUi-base
+	vendor(translate, translate3d(0, 0, 0))
+
+.wheel
+  margin 0
+  padding 0
+  list-style none
+  width  28.28427vh
+  height 28.28427vh
+  visibility hidden
+  position relative
+  li
+    overflow hidden
+    float left
+    margin -0.875em 0.875em 0 0
+    > *
+      display block

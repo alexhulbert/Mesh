@@ -1,0 +1,9 @@
+doctype xml
+opml(version="1.1")
+  head
+    title Mesh
+  body
+    outline(text="Add Station", type="search", URL=url + "/bootstrap/{QUERY}/" + key + ".opml")
+    outline(text="Stations")
+      for station in stations
+        outline(text=station.name, type="audio", URL=url + "/grab/pls/" + station.id + "/0/" + key + ".pls")/

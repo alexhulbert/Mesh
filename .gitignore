@@ -1,0 +1,6 @@
+/build
+/public/css/*.css
+/public/img/bkg.png
+/node_modules
+/data
+/buildoptions.env

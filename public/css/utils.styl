@@ -1,0 +1,69 @@
+//Useful Shortcuts for CSS
+
+//Math functions that can be passed as arguments
+multiply(a, b)
+  a * b
+divide(a, b)
+  a / b
+add(a, b)
+  a + b
+subtract(a, b)
+  a - b
+  
+//For CSS3/Browser-prefixed properties
+vendor(prop, args)
+  -webkit-{prop} args
+  -moz-{prop} args
+  -o-{prop} args
+  {prop} args
+
+//This monster is an automated positioning script
+pos(x, y, align = auto, w = 0, h = 0)
+  position absolute
+  margin auto
+  if left in align
+    text-align left
+    left unit(x, '%')
+  else if right in align
+    text-align right
+    right 100% - x
+  else if center in align
+    text-align center
+    if x < 50
+      right 100 - (2% * x)
+      left 0
+    else
+      left (2% * x) - 100
+      right 0
+  else
+    if x > 50
+      right 100% - x
+    else if x < 50
+      left unit(x, '%')
+    else
+      left 0
+      right 0
+  if top in align
+    vertical-align top
+    top unit(y, '%')
+  else if bottom in align
+    vertical-align bottom
+    bottom 100% - y
+  else if middle in align
+    vertical-align middle
+    if y < 50
+      bottom 100 - (2% * y)
+      top 0
+    else
+      top (2% * y) - 100
+      bottom 0
+  else
+    if y > 50
+      bottom 100% - y
+    else if y < 50
+      top unit(y, '%')
+    else
+      top 0
+      bottom 0
+  width w
+  height h

@@ -1,0 +1,8 @@
+doctype xml
+opml(version="1.1")
+  head
+    title= artistName
+  body
+    outline(URL=url + '/stream/' + encodeURIComponent(artistName) + '/' + encodeURIComponent(songName) + '/play.mp3', text=artistName + ' - ' + songName, type="audio")/
+    
+    outline(URL=url + '/grab/opml/' + id + '/' + key + '.opml', text=nextArtistName + ' - ' + nextSongName, type="playlist")/

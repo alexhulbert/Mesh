@@ -1,0 +1,21 @@
+extends ./layout.jade
+
+block css
+ | /font/geometria/stylesheet.css
+ | /css/fstat.css
+
+block scripts
+ | /js/caret.js
+
+block content
+  #top
+    img#logo(src='/img/logo.svg')
+    span#url MESH
+  //span#slogan DISCOVER MUSIC
+  span#whatMusic WHAT DO YOU WANT TO HEAR?
+  #textBar
+    #cell
+      span#input
+      span#caret
+    #prog
+  span#helperText ENTER AN ARTIST NAME OR GENRE AND PRESS ENTER

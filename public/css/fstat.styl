@@ -1,0 +1,52 @@
+@import('utils')
+body
+  background-color #CACACA
+  font-family 'Geometria', 'Josefin Sans', 'Novecento Sans'
+#textBar
+  pos(50, 26, top center, 100%, 24%)
+  background-color #D8D8D8
+  font-size 14vh
+  z-index 0
+  vendor(transition, all 350ms)
+#whatMusic
+  pos(50, 20, top center, 100%, 3%)
+  color black
+  font-weight 600
+  font-size 3vh
+#helperText
+  pos(50, 52, top center, 100%, 2%)
+  color #A1A1A1
+  font-weight 400
+  font-size 2vh
+#input
+  vertical-align middle
+#caret
+  height 14vh
+  width 0.06em
+  display inline-block
+  background-color #444
+  vertical-align middle
+  margin: 5vh 0 5vh -0.125em
+  &.hidden
+    background-color transparent
+#prog
+  vendor(transition, all 350ms)
+  pos(0, 50, middle left, 0%, 0%)
+  background #E6E6E6
+  z-index -1
+#top
+  pos(50, 8, middle center, auto, 4vh)
+#url
+  font-size 5vh
+  margin auto 0
+  vertical-align: bottom;
+#logo
+  width 5vh
+  height 5vh
+.d
+  &:hover
+    color #222
+  &:active
+    color #444
+.selected
+  color #000

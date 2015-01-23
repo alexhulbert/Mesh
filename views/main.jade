@@ -1,0 +1,84 @@
+extends layout.jade
+
+block scripts
+ | https://code.jquery.com/jquery-2.1.1.min.js
+ | /js/lib/jquery.nouislider.all.min.js
+ | /js/lib/fancyInput.js
+ | /js/lib/jquery.sidr.js
+ | /js/lib/masonry.min.js
+ | /js/lib/jquery.sortable.min.js
+ | /js/newStation.js dynamic
+ | /js/player.js dynamic
+
+block css
+ | /font/geometria/stylesheet.css
+ | /css/player.css dynamic
+ | /css/station.css dynamic
+
+block content
+  #player
+    style#pauseStyle
+    +icon('logo', '../logo')
+    #background
+    +icon('stations', 'stations', true)
+    +icon('songs', 'history', true)
+    #sag
+      span#sagText
+    #controls
+      #progress
+      a(target='_blank', onclick='this.src = music().audio.src; $(this).click().removeAttr(\'src\');')
+      +icon('back', 'skipBack')
+      +icon('dislike', 'brokenHeart')
+      +icon('next', 'skip')
+      +icon('like', 'heart')
+      +icon('play', 'play')
+      +icon('pause', 'pause').hidden
+    audio#audio(src='')
+    #noalbum
+      +icon('centerpiece', '../logo')
+    #album
+      //+icon('download', 'download')
+      //#volume
+    //a#feedbackIcon.wheel-button.ne
+    //+icon('feedbackBtn', 'heart', true)
+    //
+      ul#feedback.wheel(data-angle='NE')
+        li.item
+          +icon('like', 'heart')
+        li.item
+          +icon('dislike', 'brokenHeart')
+    #stat
+      .container
+        .add.station(onclick='showStation();', data-id='-1')
+          div
+      #scUp
+      #scDown
+    #song
+      .container
+        .next.song
+          div(onclick='mesh(songs.length, 3, $.noop);')
+          span
+            span
+    input#search
+  #stationAdder
+    #minus.clickable
+    #prompt WHAT MUSIC DO YOU WANT TO HEAR?
+    #clip
+      #container(style="margin-top: -1em")
+    section#answer
+      .fancyInput
+        input(type='text')
+  #bubble
+  #loading
+    object#loadLogo(type='image/svg+xml', data='/img/logo.svg')
+    #centerText Alex Hulbert
+    #meshText MESH
+    #caption Discover Music
+    #leftText
+      span.cap  Design Concepts
+      br
+      span.name Sergey Safonov
+    #rightText
+      span.cap  Powered By
+      br
+      span.name The Echonest
