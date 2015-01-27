@@ -26,6 +26,7 @@ var userSchema = mongoose.Schema({
     bootstrapped: false,
     activated: false,
     verifyToken: String,
+    elevated: false,
     order: [String]
 });
 

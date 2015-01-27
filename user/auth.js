@@ -178,14 +178,15 @@ module.exports = function(passport) {
         usernameField : 'email',
         passwordField : 'password',
         passReqToCallback : true
-    },
-    function(req, email, password, done) {
+    }, function(req, email, password, done) {
+        email = email.toLowerCase();
         
-        function userGen() {
+        function userGen(elevate) {
             var newUser = new User();
             newUser.email = email;
             newUser.password = password;
             newUser.bootstrapped = false;
+            newUser.elevated = elevate;
             newUser.save(function(err) {
                 passport.sendEmail(req, function() {
                     done(null, newUser);
@@ -197,18 +198,30 @@ module.exports = function(passport) {
         process.nextTick(function() {
             User.findOne({ email:  email }, function(err, user) {
                 if (err) return done(err);
-                
                 if (user) {
                     return done(null, false, req.flash('signupMessage', 'That email is already taken.'));
                 } else {
-                    if (validator.toBoolean(process.env.USE_BETAKEYS)) {
-                        BetaKeys.findOne({ key: req.body.key, usesLeft: {$ne:0} }, function(suberr, key) {
-                            if (key) {
-                                key.usesLeft--;
-                                key.save(userGen);
-                            } else return done(null, false, req.flash('signupMessage', 'Invalid Beta Key.'));
-                        });
-                    } else userGen();
+                    User.findOne({ elevated: true }, function(er, adminExists) {
+                        if (validator.toBoolean(process.env.USE_BETAKEYS)) {
+                            BetaKeys.findOne({
+                                key: req.body.key,
+                                usesLeft: {$ne:0},
+                                $or: [
+                                    {expires: null},
+                                    {expires: {$gte: new Date()}}
+                                ]
+                            }, function(suberr, key) {
+                                if (key) {
+                                    key.usesLeft--;
+                                    key.save(function() {
+                                        userGen(!adminExists);
+                                    });
+                                } else if (!adminExists) {
+                                    userGen(true);
+                                } else return done(null, false, req.flash('signupMessage', 'Invalid Beta Key.'));
+                            });
+                        } else userGen(!adminExists);
+                    });
                 }
             });
         });
@@ -220,6 +233,8 @@ module.exports = function(passport) {
         passReqToCallback: true
     },
     function(req, email, password, done) {
+        email = email.toLowerCase();
+        
         User.findOne({ email:  email }, function(err, user) {
             if (err) return done(err);
 

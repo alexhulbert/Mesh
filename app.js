@@ -18,7 +18,7 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');
 app.use(logger('dev', {
     skip: function(req, res) {
-        var omit = req.originalUrl.indexOf(/(KEY_)|(opml)|(password)/) != -1;
+        var omit = req.originalUrl.indexOf(/(KEY_)|(opml)|(password)|(admin)/) != -1;
         if (omit) console.log('- Omitted -');
         return omit;
     }
