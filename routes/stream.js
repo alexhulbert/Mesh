@@ -116,14 +116,14 @@ GLOBAL.stream = function(req, res) {
                     cmdOpts.push('-f', 'mp3', '-');
                     var ffmpeg_child = proc.spawn("ffmpeg", cmdOpts);
                     ffmpeg_child.stdout.pipe(res);
-                    try {
-                        ytdl.downloadFromInfo(info, {
-                            //filter: function(format) { return info.formats[findMax.id] === format; }
-                            quality: 'highest'
-                        }).pipe(ffmpeg_child.stdin);
-                    } catch(e) {
-                        req.end('');
-                    }
+                    var ytdlStream = ytdl.downloadFromInfo(info, {
+                        //filter: function(format) { return info.formats[findMax.id] === format; }
+                        quality: 'highest'
+                    })
+                    ytdlStream.on('error', function() {
+                        res.end(''); //Does this fix the 403 issue?
+                    });
+                    ytdlStream.pipe(ffmpeg_child.stdin);
                 }
             });
         }
