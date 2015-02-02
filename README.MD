@@ -38,13 +38,13 @@ How can I use it?
 Your either going to need to get a beta key for an existing server or host one yourself. Here's how to do the latter:
 
 1. __Clone the project__: Either run ```git clone https://github.com/taconut/mesh``` or Extract the zip manually. I personally reccomend the using git clone, since you can run ```git pull``` to update when there are changes. 
-2. __Install Dependencies__: Mesh also requires [FFMPEG](https://www.ffmpeg.org/), [GraphicsMagick](http://www.graphicsmagick.org/), and, if you're running Windows, [.NET Framework 2.0](http://www.microsoft.com/en-us/download/details.aspx?id=1639). Most online Node.JS services have these preinstalled, so you only need to worry about this if you're working on a local computer.
+2. __Install Dependencies__: Mesh also requires [FFMPEG](https://www.ffmpeg.org/) and [GraphicsMagick](http://www.graphicsmagick.org/) (for the title page). Most online Node.JS services have these preinstalled, so you only need to worry about this if you're working on a local computer.
 3. __Install NPM Modules__: Run ```npm install``` and wait for all of Mesh's dependancies to install themselves into node_modules. Most errors should be pretty self-explanitory, but feel free to open an issue if something doesn't work right. I won't judge; I promise.
 4. __Rename buildoptions__: Make a copy of buildoptions.sample.env called buildoptions.env. If you're working in a public environment and do not wish to store these options in a file, you can also inject them directly as environment variables. 
 5. __Add API Keys__: Below, I've provided a list of places where you can get various API keys needed by Mesh.
   + [The Echonest](https://developer.echonest.com/account/register)
   + [Last.fm](http://www.last.fm/api/account/create)
-  + [Youtube](https://developers.google.com/youtube/v3/)
+  + [Youtube](https://developers.google.com/youtube/v3/) 
 6. __Setup a user database__: For the time being, Mesh only supports mongo. There are plenty of free services for using Mongo databases.
 7. __Setup an email service__: For email recovery and verification to work, you're also going to need an email account. Gmail should suffice, but there are other options available if you need them.
 8. __Add a Session Secret__: Your going to need a value for SESSION_SECRET. Try to use something that people would have a relatively hard time guessing (so not "secret").

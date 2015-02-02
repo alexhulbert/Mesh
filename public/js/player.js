@@ -26,6 +26,7 @@ var base = '';
 var nativeMedia = false;
 var globalOverhead = 0;
 var audioWorkaround = navigator.userAgent.match(/(iPhone)|(AppleCore)|(chrome)|(iTunes)|(undefined)/gi);
+var colorThief = new ColorThief();
 
 //Used for mobile debugging
 //var report = window.onerror;
@@ -36,6 +37,37 @@ function devTest(str) {
     var parts = str.split(':');
     if (parts.length != 3) return;
     $('.' + parts[0].replace(/[^a-zA-Z]*/g, '')).css(parts[1], parts[2]);
+}
+
+function colorGen(data, cb) {
+    var unColored = data[0];
+    if (unColored.albumUrl && unColored.albumUrl != '/img/noAlbum.png') {
+        var img = new Image();
+        img.onload = function() {
+            var rgb = colorThief.getColor(img);
+            var primary = tinycolor({
+                r: rgb[0],
+                g: rgb[1],
+                b: rgb[2]
+            });
+            unColored.dark = primary.isDark();
+            var hsvComps = primary.toHsl();
+            unColored.color = [];
+            unColored.color.push(hsvComps.h);
+            unColored.color.push(hsvComps.s * 100 + '%');
+            unColored.color.push(hsvComps.l * 100);
+            cb(unColored, data[1]);
+        };
+        img.src = unColored.albumUrl;
+    } else {
+        var randColor = tinycolor(Please.make_color({ seed: unColored.id })[0]);
+        var clr = randColor.toHsl();
+        unColored.color = [];
+        unColored.color.push(clr.h);
+        unColored.color.push(clr.s * 100 + '%');
+        unColored.color.push(clr.l * 100);
+        cb(unColored, data[1]);
+    }
 }
 
 function chooseTheme(themeName, callback) {
@@ -137,9 +169,10 @@ function next() {
 
 function playSong(id) {
     $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/fixed' : '')).done(function(data) {
-       nextData = JSON.parse(data)[0];
-       load(nextData);
-       mesh(songs.length, 2, function() {});
+       colorGen(JSON.parse(data), function(first, second) {
+           load(first);
+           mesh(songs.length, 2, function() {});
+       });
    });
 }
 
@@ -308,9 +341,10 @@ function newSong(cb, skip) {
     //TODO: Improve song lookahead logic
     $.ajax(base + '/grab/station/' + curStation /* + '/' + globalOverhead */).done(function(data) {
         globalOverhead = 0;
-        var queueSongs = JSON.parse(data);
-        cb(queueSongs[0]);
-        nextUp(queueSongs[1]);
+        colorGen(JSON.parse(data), function(first, second) {
+            cb(first);
+            nextUp(second);
+        });
     });
 }
 

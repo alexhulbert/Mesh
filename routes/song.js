@@ -1,11 +1,8 @@
 var express = require('express');
 var router = express.Router();
-var huey = require('huey');
 var async = require('async');
-var color = require('onecolor');
 var request = require('request').defaults({ encoding: null });
 var LastFmNode = require('lastfm').LastFmNode;
-var Please = require('pleasejs');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
@@ -148,7 +145,12 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                             if (str.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') === 0) {
                                 next(null, false, null, la);
                             } else {
-                                next(null, true, str, la);
+                                request.get(str, function(err, response, body) {
+                                    if (!err && response.statusCode == 200) {
+                                        var dataStr = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+                                        next(null, true, dataStr, la);
+                                    } else next(null, false, null, la);
+                                });
                             }
                         }
                     },
@@ -158,7 +160,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 }
             });
         },
-        //Get Song Color
+        //Get Song Metadata
         function(hasAlbumArt, url, la, next) {
             var d = data[la];
             d.albumUrl = url || '/img/noAlbum.png';
@@ -171,31 +173,6 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 }
                 return;
             }
-            if (hasAlbumArt && url !== null) {
-                request.get(url, function(err, rs, buffer) {
-                    huey(buffer, function(error, rgb, image) {
-                        if (typeof rgb !== 'undefined' && rgb !== null) {
-                            next(null, rgb, la);
-                        } else {
-                            next(null, color(Please.make_color({ seed: d.id })[0]).toJSON().slice(1, 4).map(function(val, i, arr) { return val*255; }), la);
-                        }
-                    });
-                });
-            } else {
-                next(null, color(Please.make_color({ seed: d.id })[0]).toJSON().slice(1, 4).map(function(val, i, arr) { return val*255; }), la);
-            }
-        },
-        function(raw, la, next) {
-            var d = data[la];
-            d.dark = Math.sqrt(0.241 * Math.pow(raw[0], 2) + 0.691 * Math.pow(raw[1], 2) + 0.068 * Math.pow(raw[2], 2)) < 127; //Color Threshold
-            var clr = color(raw.concat(255)).hsl().toJSON().slice(1, 4);
-            d.color.push(clr[0]*360);
-            d.color.push(clr[1]*100 + '%');
-            d.color.push(clr[2]*100);
-            next(null, la);
-        },
-        function(la, next) {
-            var d = data[la];
             GLOBAL.stream({
                 params: {
                     artist: d.artistName,
