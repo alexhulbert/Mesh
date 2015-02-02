@@ -1,7 +1,7 @@
 MESH - *Discover Music*
 =======================
 
-<br>
+![Screenshot](etc/Screen01.png)
 
 What is Mesh?
 -------------
