@@ -4,7 +4,8 @@
   "subdomain": "mesh",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "forever start --minUptime 10000 ./bin/www",
+    "stop": "forever stopall"
   },
   "dependencies": {
     "async": "^0.9.0",
