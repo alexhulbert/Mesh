@@ -4,9 +4,11 @@
   "subdomain": "mesh",
   "private": true,
   "scripts": {
-    "start": "forever start --minUptime 10000 ./bin/www",
-    "stop": "forever stopall"
+    "start": "forever -m 35 --minUptime 10000 -o log/mesh.log -e log/mesh.err.log bin/www",
+    "stop": "forever stopall",
+    "restart": "forever restartall"
   },
+  "main": "bin/www",
   "dependencies": {
     "async": "^0.9.0",
     "bcrypt-nodejs": "0.0.3",
@@ -17,6 +19,7 @@
     "echojs": "^0.1.4",
     "express": "~4.2.0",
     "express-session": "^1.8.2",
+    "forever": "^0.14.1",
     "googleapis": "^1.0.10",
     "grooveshark-streaming": "0.0.8",
     "jade": "^1.7.0",

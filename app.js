@@ -1,5 +1,4 @@
 process.chdir(__dirname);
-require('localenv/noload').inject_env('buildoptions.env');
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
@@ -13,8 +12,8 @@ var passport = require('passport');
 var flash = require('connect-flash');
 
 var app = express();
-app.use(favicon(__dirname + '/public/img/mesh.ico'));
-app.set('views', path.join(__dirname, 'views'));
+app.use(favicon('./public/img/mesh.ico'));
+app.set('views', './views');
 app.set('view engine', 'jade');
 app.use(logger('dev', {
     skip: function(req, res) {
@@ -30,9 +29,9 @@ app.use(require('stylus').middleware(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 var monk = require('monk');
-var db = monk(process.env.DB_URL + ':' + process.env.DB_PORT + '/' + process.env.DB_NAME);
+var db = monk(process.env.DB_URL);
 
-mongoose.connect(process.env.DB_URL + ':' + process.env.DB_PORT + '/' + process.env.DB_NAME);
+mongoose.connect(process.env.DB_URL);
 app.use(session({
     secret: process.env.SESSION_SECRET,
     saveUninitialized: true,
@@ -48,7 +47,7 @@ app.use(function(req,res,next) {
     next();
 });
 
-fs.readdirSync(__dirname + '/routes').forEach(function(route) {
+fs.readdirSync('./routes').forEach(function(route) {
     app.use(require('./routes/' + route.slice(0, -3)));
 });
 
