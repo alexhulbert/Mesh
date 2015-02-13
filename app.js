@@ -41,11 +41,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
 require('./user/auth')(passport);
- 
-app.use(function(req,res,next) {
-    req.db = db;
-    next();
-});
+GLOBAL.db = db;
 
 fs.readdirSync('./routes').forEach(function(route) {
     app.use(require('./routes/' + route.slice(0, -3)));

@@ -11,12 +11,37 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
+var locks = GLOBAL.db.get('locks');
 var freq = 60;
+
+GLOBAL.updateGenres = function(genres, next) {
+    echo('genre/list').get({
+        results: 2000
+    }, function(err, json) {
+        var list = [];
+        for (var i in json.response.genres) {
+            list.push(json.response.genres[i].name);
+        }
+        if (!err) {
+            locks.findAndModify({
+                query: {
+                    name: 'genres'
+                },
+                upsert: true,
+                update: {
+                    $set: {
+                        timestamp: moment().format('MM-DD-YYYY'),
+                        list: list
+                    }
+                }
+            });
+            next(list);
+        } else next(genres);
+    });
+}
 
 router.get('/search/:query', require('../user/isAuthenticated'), function(req, res) {
     var data = [];
-    var db = req.db;
-    var locks = db.get('locks');
     async.waterfall([
         function(next) { //Query genres
             locks.findOne({
@@ -24,31 +49,17 @@ router.get('/search/:query', require('../user/isAuthenticated'), function(req, r
             }, {}, next);
         },
         function(genres, next) { //Update Genre list
-            if (typeof genres === 'undefined' || genres === null || moment(genres.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
-                echo('genre/list').get({
-                    results: 2000
-                }, function(err, json) {
-                    var list = [];
-                    for (var i in json.response.genres) {
-                        list.push(json.response.genres[i].name);
-                    }
-                    if (!err) {
-                        locks.findAndModify({
-                            query: {
-                                name: 'genres'
-                            },
-                            upsert: true,
-                            update: {
-                                $set: {
-                                    timestamp: moment().format('MM-DD-YYYY'),
-                                    list: list
-                                }
-                            }
-                        });
-                        next(null, list);
-                    } else next(null, genres.list);
+            if (
+                typeof genres === 'undefined'
+             || genres === null
+             || moment(genres.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)
+            ) {
+                GLOBAL.updateGenres(genres.lists, function(list) {
+                    next(null, list);
                 });
-            } else next(null, genres.list);
+            } else {
+                next(null, genres.list);
+            }
         },
         function(genres, next) { //Process Genres
             for (var i in genres) {

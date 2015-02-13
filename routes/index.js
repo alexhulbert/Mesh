@@ -15,14 +15,12 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
+var locks = GLOBAL.db.get('locks');
 
 router.get('/index', function(req, res)  {
     res.render('index', {
         title: 'Discover Music'
     });
-    
-    var db = req.db;
-    var locks = db.get('locks');
     
     async.waterfall([
         function(next) {

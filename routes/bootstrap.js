@@ -5,6 +5,7 @@ var request = require('request');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
+var locks = GLOBAL.db.get('locks');
 
 /*
 function translate(req, res, next) {
@@ -34,17 +35,18 @@ router.get('/bootstrap/:q/:id?', /*translate,*/ require('../user/isAuthenticated
             });
         },
         function(id, next) {
-            var db = req.db;
-            var locks = db.get('locks');
             locks.findOne({
                 name: 'genres'
             }, {}, function(err, resp) {
-                next(null, id, resp.list);
+                if (err || !resp) {
+                    GLOBAL.updateGenres([], function(list) {
+                        next(null, id, list);
+                    });
+                } else next(null, id, resp.list);
             });
         },
         function(id, genres, next) {
             if (req.params.id) return next('ID', id, genres);
-            
             var isGenre = false;
             for (var i in genres) {
                 var genre = genres[i];
