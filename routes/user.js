@@ -69,6 +69,6 @@ router.get('/user/reset/:token', passport.getReset);
 //Verify/Resend Email
 
 router.get('/user/verify/:token', passport.verify);
-router.post('/user/resend/:email', passport.resend);
+router.get('/user/resend/:email', passport.resend);
 
 module.exports = router;

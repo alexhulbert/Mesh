@@ -16,7 +16,7 @@ var lastfm = new LastFmNode({
     useragent: 'Mesh'
 });
 
-router.get('/', function(req, res)  {
+router.get('/index', function(req, res)  {
     res.render('index', {
         title: 'Discover Music'
     });
