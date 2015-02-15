@@ -100,6 +100,7 @@ router.get('/bootstrap/:q/:id?', /*translate,*/ require('../user/isAuthenticated
 		        id: profId,
 		        data: JSON.stringify(data)
 		    }, function(err, json) {
+		       req.user.order.push(req.user.stations.length - 1);
 		       console.log("CREATED " + profId + "!");
 		       req.user.lastStation = req.user.stations.length - 1;
 		       req.user.bootstrapped = true;
@@ -177,9 +178,9 @@ router.get('/bootstrap/:q/:id?', /*translate,*/ require('../user/isAuthenticated
                         data: JSON.stringify(result)
                     }, function(err, json) {
                         req.user.order.push(req.user.stations.length - 1);
-                        console.log("CREATED " + req.params.id + "!");
                         req.user.lastStation = req.user.stations.length - 1;
                         req.user.bootstrapped = true;
+                        req.user.markModified('order');
                         req.user.save(function() {
                             res.status(200).end(req.user.stations.length - 1 + "");
                         });
