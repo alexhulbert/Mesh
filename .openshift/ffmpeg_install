@@ -1,0 +1,4 @@
+wget http://johnvansickle.com/ffmpeg/builds/ffmpeg-git-64bit-static.tar.xz
+tar xf ffmpeg-git-64bit-static.tar.xz
+rm ffmpeg-git-64bit-static.tar.xz
+mv * ffmpeg-bin

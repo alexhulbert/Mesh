@@ -7,6 +7,7 @@ var proc = require('child_process');
 var gs = require('grooveshark-streaming');
 var request = require('request');
 var async = require('async');
+var path = require('path');
 
 var safePattern = /^[a-z0-9_\/\-.,?:@#%^+=\[\]{}|&()<>; *']*$/i;
 function bashEscape(arg) {
@@ -79,9 +80,9 @@ GLOBAL.stream = function(req, res) {
                         }
                     }
                 }
-                if ((findMax.useAudio && req.params.dowhat != 'download' && req.params.dowhat != 'fixed' && req.params.fixed != 'fixed') || req.params.dowhat == 'metadata') {
+                if ((findMax.useAudio && req.params.dowhat != 'download') || req.params.dowhat == 'metadata') {
                     if (req.params.dowhat == 'metadata') {
-                        proc.exec('ffprobe -i "' + info.formats[findMax.id].url + '" -show_format', function(err, stdout) {
+                        proc.exec(path.join(process.env.FFMPEG_DIR, 'ffprobe') + ' -i "' + info.formats[findMax.id].url + '" -show_format', function(err, stdout) {
                             res.end(stdout.replace(/[\s\S]*duration=([0-9\.]+)\n[\s\S]+/, '$1'));
                         });
                     } else {
@@ -114,7 +115,7 @@ GLOBAL.stream = function(req, res) {
                         );
                     }
                     cmdOpts.push('-f', 'mp3', '-');
-                    var ffmpeg_child = proc.spawn("ffmpeg", cmdOpts);
+                    var ffmpeg_child = proc.spawn(path.join(process.env.FFMPEG_DIR, 'ffmpeg'), cmdOpts);
                     ffmpeg_child.stdout.pipe(res);
                     var ytdlStream = ytdl.downloadFromInfo(info, {
                         //filter: function(format) { return info.formats[findMax.id] === format; }

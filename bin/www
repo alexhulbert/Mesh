@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 var debug = require('debug')('workspace');
 require('localenv/noload').inject_env(__dirname + '/../buildoptions.env');
+if (!process.env.FFMPEG_DIR)    process.env.FFMPEG_DIR    = "";
 if (!process.env.USE_BETAKEYS)  process.env.USE_BETAKEYS  = "true";
 if (!process.env.EMAIL_SERVICE) process.env.EMAIL_SERVICE = "Gmail";
 var app = require('../app');
