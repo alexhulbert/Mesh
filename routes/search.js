@@ -49,12 +49,9 @@ router.get('/search/:query', require('../user/isAuthenticated'), function(req, r
             }, {}, next);
         },
         function(genres, next) { //Update Genre list
-            if (
-                typeof genres === 'undefined'
-             || genres === null
-             || moment(genres.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)
-            ) {
-                GLOBAL.updateGenres(genres.lists, function(list) {
+            var emptyGenre = typeof genres === 'undefined' || genres === null;
+            if (emptyGenre || moment(genres.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
+                GLOBAL.updateGenres(emptyGenre ? [] : genres, function(list) {
                     next(null, list);
                 });
             } else {
