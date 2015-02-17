@@ -59,6 +59,7 @@ function addStat() {
                     <span class="name"></span>\
                 </div>\
             ').attr({
+                'data-img': result.img,
                 'data-id': result.id,
                 'data-query': query
             });
@@ -81,11 +82,11 @@ function bootstrapStation(self) {
     var query = target.data('query');
     var id = target.data('id');
     if (target.find('.type').text() == 'song')
-        query = $.parseHTML(target.find('.name').html().split('<br>')[1]);
+        query = $.parseHTML(target.find('.name').html().split('<br>')[1])[0].textContent;
     $.ajax('/bootstrap/' + query + '/' + id).done(function(data) {
         $.ajax('/stations/' + data).done(function(subdata) {
             var newStation = JSON.parse(subdata);
-            var nsImg = newStation.image || 'img/noAlbum.png';
+            var nsImg = target.data('img') || 'img/noAlbum.png';
             $('#bubble').css('background-image', 'url("' + nsImg + '")');
             $('<img/>').attr('src', nsImg).load(function() {
                 var newStat = appendStation(newStation);
