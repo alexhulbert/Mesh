@@ -5,13 +5,9 @@ router.get('/',     function(req, res) { res.redirect('/home');        });
 router.get('/join', function(req, res) { res.redirect('/user/signup'); });
 
 router.get('/home', require('../user/isAuthenticated'), function(req, res) {
-    if (!req.user.bootstrapped) {
-        return res.redirect('/firstStation');
-    }
-    req.user.save(function() {
-        res.render('main', {
-            title: 'Radio'
-        });
+    if (!req.user.bootstrapped) return res.redirect('/firstStation');
+    res.render('main', {
+        title: 'Radio'
     });
 });
 
