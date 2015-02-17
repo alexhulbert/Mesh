@@ -21,7 +21,7 @@ function bashEscape(arg) {
 GLOBAL.stream = function(req, res) {
     async.waterfall([
         function(next) {
-            var query = util.format('%s - %s', req.params.artist, req.params.song); //TODO: Make this better :P
+            var query = util.format('%s - %s', req.params.artist, req.params.song);
             youtube.search.list({
                 part: 'id,snippet',
                 q: query,
@@ -36,8 +36,8 @@ GLOBAL.stream = function(req, res) {
         },
         function(json, err, next) {
             var vidId = "";
-            var reg = /cover|full album|remake/gi; //I should probably tweak this
-            if (typeof json === 'undefined') {
+            var reg = /cover|full album|remake/gi; //TODO: I should probably tweak this
+            if (!json) {
                 console.log(err);
                 next("grooveshark");
                 return;
@@ -48,12 +48,12 @@ GLOBAL.stream = function(req, res) {
                    break;
                }
             }
-            
+
             if (vidId === "") {
                 next("grooveshark");
                 return;
             }
-            
+
             ytdl.getInfo('http://www.youtube.com/watch?v=' + vidId, { downloadURL: true }, function(err, info) {
                 var findMax = {
                     bitrate: 0,
@@ -63,7 +63,7 @@ GLOBAL.stream = function(req, res) {
                 if (typeof info === 'undefined') {
                     return next("grooveshark");
                     //TODO: Fix this?
-                } 
+                }
                 for (var i = (info.formats.length - 1); i >= 0; i--) {
                     var format = info.formats[i];
                     if (format.type.indexOf('audio') === 0) {
@@ -128,7 +128,7 @@ GLOBAL.stream = function(req, res) {
                 }
             });
         }
-    ], function(err){ 
+    ], function(err){
         if (err == "grooveshark") {
             if (req.params.dowhat == 'metadata') {
                 gs.Tinysong.getSongInfo(req.params.song, req.params.artist, function(err, songInfo) {
