@@ -25,7 +25,7 @@ var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = '';
 var nativeMedia = false;
 var globalOverhead = 0;
-var audioWorkaround = navigator.userAgent.match(/(iPhone)|(AppleCore)|(chrome)|(iTunes)|(undefined)/gi);
+var audioWorkaround = navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)/gi);
 var colorThief = new ColorThief();
 
 //Used for mobile debugging
@@ -101,7 +101,7 @@ function login(cb, tries) {
                 email: localStorage.email || prompt("Email"),
                 password: localStorage.password || prompt("Password")
             };
-            
+
             $.post(base + '/user/login', creds).done(function(resp) {
                 if (resp.redirect.slice(-4) == 'home') {
                     localStorage.email = creds.email;
@@ -129,7 +129,7 @@ function music() {
 if (!String.prototype.format) {
     String.prototype.format = function() {
         var args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) { 
+        return this.replace(/{(\d+)}/g, function(match, number) {
             return typeof args[number] !== 'undefined' ? args[number] : match;
         });
     };
@@ -137,7 +137,7 @@ if (!String.prototype.format) {
 
 function loadStation(sid, callback) {
     var doDefault = (typeof callback === 'undefined');
-    
+
     if (doDefault) {
         $('.station').removeClass('current');
         $('.station[data-id=' + sid + ']')
@@ -146,7 +146,7 @@ function loadStation(sid, callback) {
             .addClass('current')
         ;
     }
-    
+
     $.ajax(base + '/station/load/' + sid).done(function(data) {
         curStation = sid;
         if (doDefault) {
@@ -228,7 +228,7 @@ function deleteStation(id, event) {
     $.ajax(base + '/station/delete/' + id).done(function(resp) {
         updateHistory('remove', id);
         refreshStations();
-        if (curStation == id) 
+        if (curStation == id)
             loadStation(resp);
         else
             curStation = resp;
@@ -245,7 +245,7 @@ function updateHistory(action, param) {
                     e.data('id', parseInt(e.data('id')) - 1);
                 }
             });
-            
+
         break;
         case 'add':
             var data = songs[param];
@@ -362,7 +362,7 @@ function load(data) {
     if (data.len) {
         musicPlayer[!mIndex + 0].duration = function() {
             return data.len;
-        };  
+        };
     } else {
         musicPlayer[!mIndex + 0].duration = function() {
             return isApp && nativeMedia ? this.audio.getDuration() : this.audio.duration;
@@ -471,13 +471,13 @@ function appendStation(station) {
 }
 
 function getStations() {
-    $.ajax(base + '/stations').done(function(res){ 
+    $.ajax(base + '/stations').done(function(res){
         var data = JSON.parse(res);
         for (var i in data.stations) {
             var station = data.stations[i];
             appendStation(station);
         }
-        
+
         $('.station[data-id=' + data.lastStation  + ']').addClass('current');
         loadStation(data.lastStation, function() {
             mIndex = !mIndex + 0;
@@ -495,14 +495,14 @@ function getStations() {
 function timeUpdate() {
     var elapsed = music().audio.currentTime;
     var total = music().duration();
-    
+
     if (pb) progBar.val(elapsed/total);
-    
+
     if (total - elapsed < 15 && total - elapsed > 0.1 && !inQueue) {
         mesh(curSong + 1, 1, function() {});
         inQueue = true;
     }
-    
+
     if (total - elapsed < 0.25 && inQueue) {
         inQueue = false;
         mesh(curSong + 1, 2, function() {});
@@ -513,9 +513,9 @@ function squeezebox(username, password, ip, port) {
     if (typeof ip === 'undefined') ip = 'localhost';
     if (typeof port === 'undefined') port = 9000;
     if (typeof cb === 'undefined') cb = $.noop;
-    
+
     var file = (base || location.protocol + '//' + location.host) + '/stations/' + btoa(username + ':' + password).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~') + '.opml';
-    
+
     window.open('http://' + ip + ':' + port + '/plugins/Favorites/index.html?' + $.param({
         index: 2,
         sess: 1,
@@ -575,7 +575,7 @@ function init() {
     }
     if (!nativeMedia || !isApp) theme.tick();
     getStations();
-    
+
     con = $('#stat .container');
     con.click(function(e) {
         var target = $(e.target).closest('.station');
@@ -583,8 +583,8 @@ function init() {
             loadStation(target[0].dataset.id);
         }
     });
-    
-    
+
+
     /*$("#feedbackBtn")
         .attr('href', options.star ? '#rating' : '#feedback')
         .wheelmenu({
@@ -594,7 +594,7 @@ function init() {
             angle: [30, 60]
         })
     ;*/
-    
+
     $('#stations').sidr({
         side: 'left',
         name: 'stat',
@@ -608,7 +608,7 @@ function init() {
         },
         body: '#player,#frost'
     });
-    
+
     $('#songs').sidr({
         side: 'right',
         name: 'song',
@@ -621,7 +621,7 @@ function init() {
             theme.sidebar(sidebar);
         }
     });
-    
+
     progBar.noUiSlider({
         start: 0,
         connect: "lower",
@@ -630,7 +630,7 @@ function init() {
             max: 1
         }
     });
-    
+
     /*$('#volume').noUiSlider({
         start: 0,
         orientation: 'vertical',
@@ -640,7 +640,7 @@ function init() {
             max: 1
         }
     });*/
-    
+
     progBar
         .on('slide', function() {
             music().audio.currentTime = progBar.val()*music().duration();
@@ -652,7 +652,7 @@ function init() {
             pb = true;
         })
     ;
-    
+
     $('#search').keyup(function(e) {
         if (e.keyCode == 13) {
             $.ajax(base + '/search/' + e.target.value).done(function(resp) {
@@ -660,7 +660,7 @@ function init() {
             });
         }
     });
-    
+
     newStation();
 };
 

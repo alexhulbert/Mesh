@@ -14,12 +14,24 @@
     content ''
     display block
     top 0
-    left 0 
+    left 0
     right 0
     bottom 0
     position absolute
     box-sizing border-box
     margin 47% 25%
+#cancel
+  z-index 3
+  top 0
+  position absolute
+  right 3.75vh
+  width 12.5vh
+  height 12.5vh
+  font-size 12.5vh
+  bottom 0
+  margin auto
+  padding-top 0.1em
+  line-height 12.5vh
 .card
   border-radius 0.5em
   min-width 11em
@@ -94,7 +106,7 @@
       vendor(transition, margin-top 350ms)
       opacity 1
       height auto
-    .fancyInput
+    .fancyInput,#cancel
       top -30%
       .caret, input
         display none
@@ -157,7 +169,7 @@ body
       border-color #000
       &:after
         background #000
-        
+
 .fancyInput
   vendor(transition, all 350ms)
   pos(50, 50, middle center, 100vw, 20vh)
@@ -196,7 +208,7 @@ body
     display inline-block
     width 0.1em
     margin-left 0.1em
-    -moz-user-select none 
+    -moz-user-select none
     height 100% !important
   span:not(.deleted) ~ .caret
     position absolute

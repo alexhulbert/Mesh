@@ -26,7 +26,7 @@ router.get('/stations/:of?', translate, require('../user/isAuthenticated'), func
             name: station.prettyName,
             id: station.index
         };
-        
+
         var next = function(station) {
             if (typeof station.image === 'undefined') station.image = '/img/noAlbum.png';
             //TODO: better noAlbum image (dynamic)
@@ -36,10 +36,9 @@ router.get('/stations/:of?', translate, require('../user/isAuthenticated'), func
                 done(null);
             });
         };
-        
+
         if (moment(station.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq) || !station.bootstrapped) {
             station.bootstrapped = true;
-            console.log("READING");
             echo('tasteprofile/read').get({
                 bucket: 'images',
                 id: station.id
@@ -64,7 +63,7 @@ router.get('/stations/:of?', translate, require('../user/isAuthenticated'), func
                         handlers: {
                             success: function(lfmData) {
                                 if (typeof lfmData.track.album.image !== 'undefined')
-                                    subdata.image = station.image = lfmData.album.image[lfmData.album.image.length - 1]['#text'];
+                                    subdata.image = station.image = lfmData.track.album.image[lfmData.track.album.image.length - 1]['#text'];
                                 next(station);
                             },
                             error: function(lfmData) {
@@ -83,7 +82,7 @@ router.get('/stations/:of?', translate, require('../user/isAuthenticated'), func
             next(station);
         }
     };
-    
+
     if (typeof req.params.of !== 'undefined' && req.params.of.slice(-5) != '.opml') {
         if (req.params.of >= req.user.stations.length)  return res.status(400).end("Station index out of range.");
         getInfo(req.user.stations[req.params.of], function() {
