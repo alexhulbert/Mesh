@@ -168,7 +168,7 @@ function next() {
 }
 
 function playSong(id) {
-    $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/fixed' : '')).done(function(data) {
+    $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/legacy' : '')).done(function(data) {
        colorGen(JSON.parse(data), function(first, second) {
            load(first);
            mesh(songs.length, 2, function() {});
@@ -318,7 +318,7 @@ function updateUI(data) {
 
 function downloadSong() {
     var el = $('<a download></a>')
-        .attr('href', music().audio.src.replace('/fixed', '') + '/download')
+        .attr('href', music().audio.src.replace('/legacy', '') + '/download')
         .appendTo('body')
     ;
     el[0].click();
@@ -351,7 +351,7 @@ function newSong(cb, skip) {
 function load(data) {
     var artist = encodeURIComponent(data.artistName);
     var song = encodeURIComponent(data.songName);
-    var srcUrl = base + '/stream/' + artist.replace(/\//g, '%2F') + '/' + song.replace(/\//g, '%2F') + (audioWorkaround ? '/fixed' : '');
+    var srcUrl = base + '/stream/' + artist.replace(/\//g, '%2F') + '/' + song.replace(/\//g, '%2F') + (audioWorkaround ? '/legacy' : '');
     if (isApp && nativeMedia) {
         musicPlayer[!mIndex + 0].audio.release();
         musicPlayer[!mIndex + 0].audio = new Media(srcUrl);

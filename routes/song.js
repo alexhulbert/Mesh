@@ -81,7 +81,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
         switch(req.params.type) {
             case 'pls':
                 var playlist = '[playlist]\n';
-                playlist += 'File1=' + process.env.URL + '/stream/' + encodeURIComponent(data[0].artistName) + '/' + encodeURIComponent(data[0].songName) + '/fixed.mp3' + '\n';
+                playlist += 'File1=' + process.env.URL + '/stream/' + encodeURIComponent(data[0].artistName) + '/' + encodeURIComponent(data[0].songName) + '/.mp3' + '\n';
                 playlist += 'Title1=' + data[0].artistName + ' - ' + data[0].songName + '\n';
                 if (data[0].len) playlist += 'Length1=' + data[0].len + '\n';
                 playlist += 'File2=' + process.env.URL + '/grab/pls/' + req.params.sid + '/' + (parseInt(req.params.overhead) + 1) + '/' + req.query.key + '.pls\n';
