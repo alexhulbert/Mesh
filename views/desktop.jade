@@ -1,5 +1,5 @@
-mixin icon(id, name, nonclickable)
-  object.icon(class=(nonclickable ? '' : 'clickable ') + (attributes.class || ''), id=id, type='image/svg+xml', data='/img/icons/#{name}.svg')
+mixin icon(id, name, click)
+  object.icon(class=(click == 'noclick' ? '' : 'clickable ') + (attributes.class || ''), id=id, type='image/svg+xml', data='/img/icons/#{name}.svg', onclick=(click != 'noclick' && click || ''))
 mixin toScript
   - var oldBuffer = buf;
   - buf = []

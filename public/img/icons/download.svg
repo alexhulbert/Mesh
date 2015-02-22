@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg ontouchstart="parent.downloadSong();" onclick="parent.downloadSong();" width="22px" height="26px" viewBox="0 0 22 26" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<svg width="22px" height="26px" viewBox="0 0 22 26" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
         <g transform="translate(-314, -671)" fill="#FFFFFF">
             <path d="M324.214312,686.901624 L315.707107,678.394419 L314.292893,679.808632 L324.394419,689.910158 L325.101525,690.617264 L325.808632,689.910158 L335.910158,679.808632 L334.495944,678.394419 L326.214312,686.676051 L326.214312,671.653122 L324.214312,671.653122 L324.214312,686.901624 L324.214312,686.901624 Z M335,696 L336,696 L336,694 L335,694 L315,694 L314,694 L314,696 L315,696 L335,696 L335,696 Z"></path>

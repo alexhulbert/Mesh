@@ -27,6 +27,7 @@ var nativeMedia = false;
 var globalOverhead = 0;
 var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)/gi);
 var colorThief = new ColorThief();
+var locked = false;
 
 //Used for mobile debugging
 //var report = window.onerror;
@@ -156,6 +157,7 @@ function loadStation(sid, callback) {
         } else {
             callback();
         }
+        locked = false;
     });
 }
 
@@ -177,10 +179,14 @@ function playSong(id) {
    });
 }
 
-function mesh(ind, part, cb) {
+function mesh(ind, part, callback) {
     if (!part) part = 3;
-    if (!cb) cb = function() {};
-    if (typeof ind === 'undefined') ind = songs.length
+    locked = true;
+    var cb = function() {
+        locked = false;
+        if (callback) callback();
+    };
+    if (typeof ind === 'undefined') ind = songs.length;
     if (ind >= songs.length) {
         if (inQueue) {
             part = 2;
@@ -190,10 +196,9 @@ function mesh(ind, part, cb) {
             newSong(function(data) {
                 nextData = data;
                 load(data);
-                cb();
                 if (part & 2) {
                     mesh(ind, 2, cb);
-                }
+                } else cb();
             });
         } else if (part & 2) {
             songs.push(nextData);
@@ -201,6 +206,7 @@ function mesh(ind, part, cb) {
             updateHistory('add', songs.length - 1);
             updateUI(nextData);
             playQueue();
+            cb();
         }
     } else {
         if (inQueue) {
@@ -216,6 +222,7 @@ function mesh(ind, part, cb) {
             updateUI(soin);
             playQueue();
         }
+        cb();
     }
 }
 
@@ -226,16 +233,19 @@ function playQueue() {
 }
 
 function deleteStation(id, event) {
+    locked = true;
     if (id === 0 && $('.station').length == 2) return; //Don't delete last station
     if (event) event.stopPropagation();
     if (curStation == id) pause(); //lock?
     $.ajax(base + '/station/delete/' + id).done(function(resp) {
         updateHistory('remove', id);
         refreshStations();
-        if (curStation == id)
+        if (curStation == id) {
             loadStation(resp);
-        else
+        } else {
             curStation = resp;
+            locked = false;
+        }
     });
 }
 
@@ -374,11 +384,15 @@ function load(data) {
     }
 }
 
-function bounce(what) {
-    $.ajax(base + '/feedback/' + curStation + '/' + what).done(function() {
-        switch(what) {
+function feedback(opinion) {
+    locked = true;
+    $.ajax(base + '/feedback/' + curStation + '/' + opinion).done(function() {
+        switch(opinion) {
             case 'dislike':
                 next();
+            break;
+            default:
+                locked = false;
             break;
         }
     });
@@ -555,7 +569,6 @@ function init() {
             });
         });
     }
-    $('#loadLogo').contents().find('g, path').css('fill', '#333');
     for (var i in musicPlayer) {
         if (isApp && nativeMedia) {
             var mp = musicPlayer[i];
@@ -581,12 +594,13 @@ function init() {
     getStations();
 
     con = $('#stat .container');
-    con.click(function(e) {
+    con.click($.debounce(5000, true, function(e) {
+        locked = true;
         var target = $(e.target).closest('.station');
         if (target.length && !target.hasClass('add')) {
             loadStation(target[0].dataset.id);
         }
-    });
+    }));
 
 
     /*$("#feedbackBtn")
@@ -634,7 +648,6 @@ function init() {
             max: 1
         }
     });
-
     /*$('#volume').noUiSlider({
         start: 0,
         orientation: 'vertical',
@@ -644,7 +657,12 @@ function init() {
             max: 1
         }
     });*/
-
+    
+    /*$('.icon.clickable').each(function() {
+        $(this).contents().on('click touchstart', 'svg', function(event) {
+            eval(event.view.frameElement.onclick.toString().slice(28, -2));
+        });
+    });*/
     progBar
         .on('slide', function() {
             music().audio.currentTime = progBar.val()*music().duration();
@@ -656,9 +674,35 @@ function init() {
             pb = true;
         })
     ;
-
     newStation();
 };
+
+$(window).load(function() {
+    $('.icon.clickable').each(function() {
+        $(this).contents().on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
+            if (!locked)
+                eval(event.view.frameElement.onclick.toString().slice(28, -2));
+            //I can't for the life of me find a better solution...
+        }));
+    });
+    $('#loadLogo').contents().find('g, path').css('fill', '#333');
+    $('#songs').contents().find('svg')
+        .on('touchstart click', function() {
+            $.sidr((sidebar == 0) ? 'open' : 'close', 'song');
+        })
+        .on('mouseover', function() {
+            $.sidr('open', 'song');
+        })
+    ;
+    $('#stations').contents().find('svg')
+        .on('touchstart click', function() {
+            $.sidr((sidebar == 0) ? 'open' : 'close', 'stat');
+        })
+        .on('mouseover', function() {
+            $.sidr('open', 'stat');
+        })
+    ;
+});
 
 if (isApp) {
     document.addEventListener("deviceready", function() {

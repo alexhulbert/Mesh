@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var User = require('../user/model').user;
 
-router.get('/squeezebox(.opml)?/:username?/:password?', function(req, res) {
+router.get('/squeezebox/:username?/:password?', function(req, res) {
     var params = {
         url: process.env.URL
     };

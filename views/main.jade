@@ -9,6 +9,7 @@ block scripts
  | /js/lib/please.js
  | /js/lib/color-thief.js
  | /js/lib/jquery.sortable.min.js
+ | /js/lib/jquery.throttle.min.js
  | /js/newStation.js dynamic
  | /js/player.js dynamic
 
@@ -21,19 +22,19 @@ block content
     style#pauseStyle
     +icon('logo', '../logo')
     #background
-    +icon('stations', 'stations', true)
-    +icon('songs', 'history', true)
+    +icon('stations', 'stations', 'noclick')
+    +icon('songs', 'history', 'noclick')
     #sag
       span#sagText
     #controls
       #progress
       a(target='_blank', onclick='this.src = music().audio.src; $(this).click().removeAttr(\'src\');')
-      +icon('back', 'skipBack')
-      +icon('dislike', 'brokenHeart')
-      +icon('next', 'skip')
-      +icon('like', 'heart')
-      +icon('play', 'play')
-      +icon('pause', 'pause').hidden
+      +icon('back', 'skipBack', 'back();')
+      +icon('dislike', 'brokenHeart', 'feedback("dislike");')
+      +icon('next', 'skip', 'next();')
+      +icon('like', 'heart', 'feedback("like");')
+      +icon('play', 'play', 'play();')
+      +icon('pause', 'pause', 'pause();').hidden
     audio#audio(src='')
     #noalbum
       +icon('centerpiece', '../logo')
@@ -41,7 +42,7 @@ block content
       //+icon('download', 'download')
       //#volume
     //a#feedbackIcon.wheel-button.ne
-    //+icon('feedbackBtn', 'heart', true)
+    //+icon('feedbackBtn', 'heart', 'noclick')
     //
       ul#feedback.wheel(data-angle='NE')
         li.item
