@@ -6,11 +6,17 @@ theme = {
         var str = data.songName + '<br>' + data.artistName;
         if (data.albumName !== null) str += ' - ' + data.albumName;
         $('#sagText').html(str);
-        if (data.dark) {
-            $('#pauseStyle').html('#background.paused' + ((isApp && nativeMedia) ? ',html.mobile' : '') + ' #background { background-image: radial-gradient(circle closest-side, hsl(' + color[0] + ',' + color[1] + ',' + Math.min(color[2] + 50, 100) + '%) 0%, hsl(' + color.join(',') + '%) 95%) !important; }');
-        } else {
-            $('#pauseStyle').html('#background.paused' + ((isApp && nativeMedia) ? ',html.mobile' : '') + ' #background { background-image: radial-gradient(circle closest-side, hsl(' + color[0] + ',' + color[1] + ',' + Math.max(color[2] - 25, 0) + '%) 0%, hsl(' + color.join(',') + '%) 95%) !important; }');
-        }
+        var glowBri;
+        if (data.dark)
+            glowBri = Math.min(color[2] + 50, 100);
+        else
+            glowBri = Math.max(color[2] - 25, 0);
+        $('#pauseStyle').html(
+            '#background.paused' + ((isApp && nativeMedia) ? ',html.mobile' : '') + ' #background { ' + 
+            'background-image: radial-gradient(circle closest-side, ' +
+            'hsl(' + color[0] + ',' + color[1] + ',' + glowBri + '%) 0%, ' + 
+            'hsl(' + color.join(',') + '%) 95%) !important; }'
+        );
     },
     "tick": function() {
         if (isRunning) {
