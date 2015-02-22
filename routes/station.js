@@ -50,9 +50,14 @@ router.get('/station/:action/:sid', require('../user/isAuthenticated'), function
                     });
                 },
                 function(sessid, next) {
+                    var recentlyPlayed = [''];
+                    for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
+                        recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
+                    }
+                    
                     var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
                                + process.env.ECHONEST_KEY + '&session_id=' + sessid
-                               + [''].concat(req.user.stations[req.params.sid].recentlyPlayed).join('&invalidate_song=')
+                               + recentlyPlayed.join('&invalidate_song=SO')
                     ;
                     request(reqStr, function(err, resp, body) {
                         res.end(sessid);
@@ -61,7 +66,7 @@ router.get('/station/:action/:sid', require('../user/isAuthenticated'), function
             ]);
         break;
         case 'delete':
-            if (parseInt(req.params.sid) === 0 && req.user.stations.length === 1) {
+            if (parseInt(req.params.sid) === 0 && req.user.stations.length ===  1) {
                 res.end(req.params.sid);
                 break;
             }

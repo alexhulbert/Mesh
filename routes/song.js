@@ -21,12 +21,15 @@ function translate(req, res, next) {
 
 //Overhead doubles as Squeezebox cache negator
 router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user/isAuthenticated'), function(req, res) {
+    var workaround =
+        ~(req.params.overhead || '').indexOf('legacy') ||
+        ~(req.params.fileName || '').indexOf('legacy') || 
+        ~['pls', 'asx'].indexOf(req.params.type)
+    ;
     var data;
-    var end = false;
+    var end = false; 
     var profSong = function(next) {
-        data = [{
-            color: []
-        }];
+        data = [{}];
         echo('song/profile').get({
             id: req.params.sid
         }, function(err, json) {
@@ -45,9 +48,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
             //TODO: Fix stationId definition control. This error may not need coverage
         }
         
-        data = [{
-            color: []
-        }, {}];
+        data = [{}, {}];
         req.params.overhead = (req.params.type != 'pls') && Math.min(Math.max(parseInt(req.params.overhead), 0), 25) || 0;
         echo('playlist/dynamic/next').get({
             session_id: stationId,
@@ -62,10 +63,10 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 var jrs = json.response.songs[req.params.overhead];
                 var jrl = json.response.lookahead[0];
                 //TODO: Implement Skip Stuff
-                req.user.stations[req.params.sid].recentlyPlayed.push(jrs.id);
-                if (req.user.stations[req.params.sid].length > max) {
-                    req.user.stations[req.params.sid].recentlyPlayed.shift();
-                }
+                req.user.stations[req.params.sid].recentlyPlayed =
+                    jrs.id.slice(2) +
+                    req.user.stations[req.params.sid].recentlyPlayed.slice(0, (max-1)*16)
+                ;
                 req.user.markModified('stations');
                 req.user.save(function() {
                     data[0].id = jrs.id;
@@ -81,7 +82,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
         switch(req.params.type) {
             case 'pls':
                 var playlist = '[playlist]\n';
-                playlist += 'File1=' + process.env.URL + '/stream/' + encodeURIComponent(data[0].artistName) + '/' + encodeURIComponent(data[0].songName) + '/.mp3' + '\n';
+                playlist += 'File1=' + process.env.URL + '/stream/' + encodeURIComponent(data[0].artistName) + '/' + encodeURIComponent(data[0].songName) + '/legacy.mp3' + '\n';
                 playlist += 'Title1=' + data[0].artistName + ' - ' + data[0].songName + '\n';
                 if (data[0].len) playlist += 'Length1=' + data[0].len + '\n';
                 playlist += 'File2=' + process.env.URL + '/grab/pls/' + req.params.sid + '/' + (parseInt(req.params.overhead) + 1) + '/' + req.query.key + '.pls\n';
@@ -104,13 +105,10 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 });
             break;
             default:
-                if (typeof JSON.parse(JSON.stringify(data))[0].len === 'undefined') {
-                    "debug!";
-                }
                 res.end(JSON.stringify(data));
             break;
         }
-    }
+    };
     
     async.waterfall([
         function(next) {
@@ -172,22 +170,25 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                     finish();
                 }
                 return;
+            } else if (workaround) {
+                GLOBAL.stream({
+                    params: {
+                        artist: d.artistName,
+                        song: d.songName,
+                        dowhat: 'metadata'
+                    }
+                }, {
+                    end: function(body) {
+                        d.len = parseFloat(body);
+                        if (!end) end = true;
+                        else finish();
+                    } 
+                }, function() {});
+            } else {
+                if (!end) end = true;
+                else finish();
             }
-            GLOBAL.stream({
-                params: {
-                    artist: d.artistName,
-                    song: d.songName,
-                    dowhat: 'metadata'
-                }
-            }, {
-                end: function(body) {
-                    d.len = parseFloat(body);
-                    if (!end) end = true;
-                    else finish();
-                } 
-            }, function() {});
         }
     ]);
 });
-
 module.exports = router;

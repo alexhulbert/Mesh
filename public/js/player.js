@@ -25,7 +25,7 @@ var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = '';
 var nativeMedia = false;
 var globalOverhead = 0;
-var audioWorkaround = navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)/gi);
+var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)/gi);
 var colorThief = new ColorThief();
 
 //Used for mobile debugging
@@ -160,23 +160,27 @@ function loadStation(sid, callback) {
 }
 
 function back() {
-    mesh(curSong - 1, 3, function() {});
+    mesh(curSong - 1, 3);
 }
 
 function next() {
-    mesh(curSong + 1, 3, function() {});
+    mesh(curSong + 1, 3);
 }
 
 function playSong(id) {
     $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/legacy' : '')).done(function(data) {
        colorGen(JSON.parse(data), function(first, second) {
+           nextData = first;
            load(first);
-           mesh(songs.length, 2, function() {});
+           mesh(songs.length, 2, $.noop);
        });
    });
 }
 
 function mesh(ind, part, cb) {
+    if (!part) part = 3;
+    if (!cb) cb = function() {};
+    if (typeof ind === 'undefined') ind = songs.length
     if (ind >= songs.length) {
         if (inQueue) {
             part = 2;
@@ -217,7 +221,7 @@ function mesh(ind, part, cb) {
 
 function playQueue() {
     pause();
-    mIndex = !mIndex + 0;
+    mIndex = +!mIndex;
     play();
 }
 
@@ -338,9 +342,9 @@ function nextUp(data) {
 
 function newSong(cb, skip) {
     if (typeof skip === 'undefined') skip = false;
-    //TODO: Improve song lookahead logic
-    $.ajax(base + '/grab/station/' + curStation /* + '/' + globalOverhead */).done(function(data) {
-        globalOverhead = 0;
+    //TODO: Improve song lookahead logic (globalOverhead)
+    $.ajax(base + '/grab/station/' + curStation + (audioWorkaround ? '/legacy' : '')).done(function(data) {
+        //globalOverhead = 0;
         colorGen(JSON.parse(data), function(first, second) {
             cb(first);
             nextUp(second);
@@ -351,22 +355,22 @@ function newSong(cb, skip) {
 function load(data) {
     var artist = encodeURIComponent(data.artistName);
     var song = encodeURIComponent(data.songName);
-    var srcUrl = base + '/stream/' + artist.replace(/\//g, '%2F') + '/' + song.replace(/\//g, '%2F') + (audioWorkaround ? '/legacy' : '');
-    if (isApp && nativeMedia) {
-        musicPlayer[!mIndex + 0].audio.release();
-        musicPlayer[!mIndex + 0].audio = new Media(srcUrl);
-    } else {
-        musicPlayer[!mIndex + 0].audio.src = srcUrl;
-        musicPlayer[!mIndex + 0].audio.load();
-    }
+    var srcUrl = base + '/stream/' + artist.replace(/\//g, '%2F') + '/' + song.replace(/\//g, '%2F');
     if (data.len) {
-        musicPlayer[!mIndex + 0].duration = function() {
+        musicPlayer[+!mIndex].duration = function() {
             return data.len;
         };
     } else {
-        musicPlayer[!mIndex + 0].duration = function() {
-            return isApp && nativeMedia ? this.audio.getDuration() : this.audio.duration;
+        musicPlayer[+!mIndex].duration = function() {
+            return isApp && nativeMedia ? this.audio.getDuration() : (this.audio.duration || Infinity);
         };
+    }
+    if (isApp && nativeMedia) {
+        musicPlayer[+!mIndex].audio.release();
+        musicPlayer[+!mIndex].audio = new Media(srcUrl + (audioWorkaround ? '/legacy' : ''));
+    } else {
+        musicPlayer[+!mIndex].audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
+        musicPlayer[+!mIndex].audio.load();
     }
 }
 
@@ -480,7 +484,7 @@ function getStations() {
 
         $('.station[data-id=' + data.lastStation  + ']').addClass('current');
         loadStation(data.lastStation, function() {
-            mIndex = !mIndex + 0;
+            mIndex = +!mIndex;
             newSong(function(data) {
                 load(data);
                 songs.push(data);
@@ -499,13 +503,13 @@ function timeUpdate() {
     if (pb) progBar.val(elapsed/total);
 
     if (total - elapsed < 15 && total - elapsed > 0.1 && !inQueue) {
-        mesh(curSong + 1, 1, function() {});
+        mesh(curSong + 1, 1);
         inQueue = true;
     }
 
     if (total - elapsed < 0.25 && inQueue) {
         inQueue = false;
-        mesh(curSong + 1, 2, function() {});
+        mesh(curSong + 1, 2);
     }
 }
 
@@ -652,14 +656,6 @@ function init() {
             pb = true;
         })
     ;
-
-    $('#search').keyup(function(e) {
-        if (e.keyCode == 13) {
-            $.ajax(base + '/search/' + e.target.value).done(function(resp) {
-                playSong(eval(resp)[0]);
-            });
-        }
-    });
 
     newStation();
 };

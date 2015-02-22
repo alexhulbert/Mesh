@@ -12,7 +12,7 @@ var station = mongoose.Schema({
     bootstrapped: false,
     image: String,
     filters: {type: mongoose.Schema.Types.Mixed, default: {}},
-    recentlyPlayed: [String]
+    recentlyPlayed: String
 });
 
 var userSchema = mongoose.Schema({

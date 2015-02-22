@@ -101,7 +101,10 @@ GLOBAL.stream = function(req, res) {
                 if (findMax.id == -1 || findMax.bitrate < minBitrte)
                     return videoValid(null); 
 
-                var workaround = req.params.dowhat == 'legacy' || req.params.legacy == 'legacy';
+                var workaround = 
+                    ~(req.params.dowhat || '').indexOf('legacy') ||
+                    ~(req.params.legacy || '').indexOf('legacy')
+                ;
                 if ((!workaround && req.params.dowhat != 'download') || req.params.dowhat == 'metadata') {
                     if (req.params.dowhat == 'metadata') {
                         proc.exec(path.join(process.env.FFMPEG_DIR, 'ffprobe') + ' -i "' + info.formats[findMax.id].url + '" -show_format', function(err, stdout) {
