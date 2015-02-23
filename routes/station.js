@@ -50,9 +50,12 @@ router.get('/station/:action/:sid', require('../user/isAuthenticated'), function
                     });
                 },
                 function(sessid, next) {
-                    var recentlyPlayed = [''];
-                    for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
-                        recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
+                    var recentlyPlayed = [];
+                    if (req.user.stations[req.params.sid].recentlyPlayed) {
+                        recentlyPlayed.push('');
+                        for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
+                            recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
+                        }
                     }
                     
                     var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
