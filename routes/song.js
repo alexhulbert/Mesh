@@ -63,8 +63,8 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 var jrs = json.response.songs[req.params.overhead];
                 var jrl = json.response.lookahead[0];
                 //TODO: Implement Skip Stuff
-                if (!req.user.stations[req.params.sid])
-                    req.user.stations[req.params.sid] = [];
+                if (!req.user.stations[req.params.sid].recentlyPlayed)
+                    req.user.stations[req.params.sid].recentlyPlayed = [];
                 req.user.stations[req.params.sid].recentlyPlayed =
                     jrs.id.slice(2) +
                     req.user.stations[req.params.sid].recentlyPlayed.slice(0, (max-1)*16)

@@ -33,6 +33,16 @@ var locked = false;
 //var report = window.onerror;
 //window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));}; //TODO: Remove
 
+var onNoSong = $.throttle(20000, false, function(e) {
+    console.log("ERROR LOADING SONG!", e);
+    var badSong = $('.song.current');
+    mesh(songs.length, 3, function() {
+        curSong--;
+        songs.splice(-2, 1);
+        badSong.remove();
+    });
+});
+
 //This is probably a really bad idea
 function devTest(str) {
     var parts = str.split(':');
@@ -375,15 +385,7 @@ function load(data) {
             return isApp && nativeMedia ? this.audio.getDuration() : (this.audio.duration || Infinity);
         };
     }
-    musicPlayer[+!mIndex].audio.addEventListener('error', $.debounce(10000, true, function(e) {
-        console.log("ERROR LOADING SONG!", e);
-        var badSong = $('.song.current');
-        mesh(songs.length, 3, function() {
-            curSong--;
-            songs.splice(-2, 1);
-            badSong.remove();
-        });
-    }));
+    musicPlayer[+!mIndex].audio.addEventListener('error', onNoSong);
     if (isApp && nativeMedia) {
         musicPlayer[+!mIndex].audio.release();
         musicPlayer[+!mIndex].audio = new Media(srcUrl + (audioWorkaround ? '/legacy' : ''));
