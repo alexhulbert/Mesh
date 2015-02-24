@@ -375,6 +375,15 @@ function load(data) {
             return isApp && nativeMedia ? this.audio.getDuration() : (this.audio.duration || Infinity);
         };
     }
+    musicPlayer[+!mIndex].audio.addEventListener('error', $.debounce(10000, true, function(e) {
+        console.log("ERROR LOADING SONG!", e);
+        var badSong = $('.song.current');
+        mesh(songs.length, 3, function() {
+            curSong--;
+            songs.splice(-2, 1);
+            badSong.remove();
+        });
+    }));
     if (isApp && nativeMedia) {
         musicPlayer[+!mIndex].audio.release();
         musicPlayer[+!mIndex].audio = new Media(srcUrl + (audioWorkaround ? '/legacy' : ''));
@@ -678,10 +687,11 @@ function init() {
 };
 
 $(window).load(function() {
+    var functSlice = typeof InstallTrigger !== 'undefined' ? 26 : 28;
     $('.icon.clickable').each(function() {
         $(this).contents().on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
             if (!locked)
-                eval(event.view.frameElement.onclick.toString().slice(28, -2));
+                eval(event.view.frameElement.onclick.toString().slice(functSlice, -2));
             //I can't for the life of me find a better solution...
         }));
     });
