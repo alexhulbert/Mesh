@@ -21,10 +21,6 @@ theme = {
         if (data.albumName !== null) str += ' - ' + data.albumName;
         $('#sagText').html(str); //Displaying the current Artist/Song/Album
         
-        $('.noUi-handle').css({
-            'background-color': light ? 'black' : 'white'
-        }); //Giving the progress bar grabber a color (b/w)
-        
         //px = ratio of pixels to ems since blur only takes pixels
         px = parseFloat(getComputedStyle(document.documentElement).fontSize);
         

@@ -31,16 +31,17 @@ block content
       a(target='_blank', onclick='this.src = music().audio.src; $(this).click().removeAttr(\'src\');')
       +icon('back', 'skipBack', 'back();')
       +icon('dislike', 'brokenHeart', 'feedback("dislike");')
+      +icon('undislike', 'brokenHeartFilled', 'feedback("undislike");').hidden
       +icon('next', 'skip', 'next();')
       +icon('like', 'heart', 'feedback("like");')
+      +icon('unlike', 'heartFilled', 'feedback("unlike");').hidden
       +icon('play', 'play', 'play();')
       +icon('pause', 'pause', 'pause();').hidden
     audio#audio(src='')
     #noalbum
       +icon('centerpiece', '../logo')
     #album
-      //+icon('download', 'download')
-      //#volume
+    //  +icon('download', 'download')
     //a#feedbackIcon.wheel-button.ne
     //+icon('feedbackBtn', 'heart', 'noclick')
     //
@@ -58,7 +59,7 @@ block content
     #song
       .container
         .next.song
-          div(onclick='mesh();')
+          div(onclick='if (!locked) mesh();')
           span
             span
     input#search

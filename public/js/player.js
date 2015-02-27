@@ -25,22 +25,81 @@ var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = '';
 var nativeMedia = false;
 var globalOverhead = 0;
-var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)/gi);
+var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)|(chrome)/gi);
 var colorThief = new ColorThief();
 var locked = false;
+var likeStatus = {
+    NEUTRAL: 0,
+    LIKE: 1,
+    DISLIKE: 2
+};
+var likeBtn, dislikeBtn, unlikeBtn, undislikeBtn;
+
+var showLike = [
+    function(song, cb) { //NEUTRAL
+        unlikeBtn.fadeTo(400, 0, function() {
+            unlikeBtn.addClass('hidden');
+        });
+        likeBtn.removeClass('hidden').fadeTo(400, 1, function() {
+            if (song) {
+                song.likeStatus = likeStatus.NEUTRAL;
+                if (cb) locked = false; else unlock();
+            }
+            if (cb) cb();
+        });
+        dislikeBtn.removeClass('hidden').fadeTo(400, 1);
+        undislikeBtn.fadeTo(400, 0, function() {
+            undislikeBtn.addClass('hidden');
+        });
+    },
+    function(song, cb) { //LIKE
+        likeBtn.fadeTo(400, 0, function() {
+            likeBtn.addClass('hidden');
+        });
+        unlikeBtn.removeClass('hidden').fadeTo(400, 1, function() {
+            if (song) {
+                song.likeStatus = likeStatus.LIKE;
+                if (cb) locked = false; else unlock();
+            }
+            if (cb) cb();
+        });
+        dislikeBtn.removeClass('hidden').fadeTo(400, 1);
+        undislikeBtn.fadeTo(400, 0, function() {
+            undislikeBtn.addClass('hidden');
+        });
+    },
+    function(song, cb) { //DISLIKE
+        unlikeBtn.fadeTo(400, 0, function() {
+            unlikeBtn.addClass('hidden');
+        });
+        likeBtn.removeClass('hidden').fadeTo(400, 1, function() {
+            if (song) {
+                song.likeStatus = likeStatus.DISLIKE;
+                if (cb) locked = false; else unlock();
+            }
+            if (cb) cb();
+        });
+        undislikeBtn.removeClass('hidden').fadeTo(400, 1);
+        dislikeBtn.fadeTo(400, 0, function() {
+            dislikeBtn.addClass('hidden');
+        });
+    }
+];
 
 //Used for mobile debugging
 //var report = window.onerror;
-//window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));}; //TODO: Remove
+//window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));};
 
 var onNoSong = $.throttle(20000, false, function(e) {
-    console.log("ERROR LOADING SONG!", e);
-    var badSong = $('.song.current');
-    mesh(songs.length, 3, function() {
-        curSong--;
-        songs.splice(-2, 1);
-        badSong.remove();
-    });
+    if (e.path[0].error.code == 4) {
+        console.log("ERROR LOADING SONG!", e);
+        var badSong = $('.song.current');
+        mesh(songs.length, 3, function() {
+            curSong--;
+            songs.splice(-2, 1);
+            badSong.remove();
+        });
+    }
 });
 
 //This is probably a really bad idea
@@ -50,8 +109,17 @@ function devTest(str) {
     $('.' + parts[0].replace(/[^a-zA-Z]*/g, '')).css(parts[1], parts[2]);
 }
 
+function lock() {
+    locked = true;
+}
+
+function unlock() {
+    locked = false;
+}
+
 function colorGen(data, cb) {
     var unColored = data[0];
+    unColored.station = curStation;
     if (unColored.albumUrl && unColored.albumUrl != '/img/noAlbum.png') {
         var img = new Image();
         img.onload = function() {
@@ -167,7 +235,7 @@ function loadStation(sid, callback) {
         } else {
             callback();
         }
-        locked = false;
+        unlock();
     });
 }
 
@@ -191,9 +259,9 @@ function playSong(id) {
 
 function mesh(ind, part, callback) {
     if (!part) part = 3;
-    locked = true;
+    lock();
     var cb = function() {
-        locked = false;
+        unlock();
         if (callback) callback();
     };
     if (typeof ind === 'undefined') ind = songs.length;
@@ -243,7 +311,8 @@ function playQueue() {
 }
 
 function deleteStation(id, event) {
-    locked = true;
+    if (locked) return;
+    lock();
     if (id === 0 && $('.station').length == 2) return; //Don't delete last station
     if (event) event.stopPropagation();
     if (curStation == id) pause(); //lock?
@@ -254,7 +323,7 @@ function deleteStation(id, event) {
             loadStation(resp);
         } else {
             curStation = resp;
-            locked = false;
+            unlock();
         }
     });
 }
@@ -292,22 +361,23 @@ function updateHistory(action, param) {
 
 function updateUI(data) {
     updateHistory('set', curSong);
-    var fill, specFill, tintFill;
+    var fill, hoverFill, pressFill;
     color = data.color;
     if (color[0] === null) color[0] = 0;
     if (data.dark) {
         $('body').addClass('light').removeClass('dark');
         light = false;
-        fill = "#FFF";
-        specFill = "#444";
-        tintFill = "#CCC";
+        fill = "#C9C9C9";
+        hoverFill = "#999";
+        pressFill = "#FFF";
     } else {
         light = true;
         $('body').addClass('dark').removeClass('light');
-        fill = "#000";
-        specFill = "#D8D8D8";
-        tintFill = "#444";
+        fill = "#252525";
+        hoverFill = "#666";
+        pressFill = "#000";
     }
+    showLike[data.likeStatus || 0]();
     var icons = $('.icon').contents();
     for (var i = 0; i < icons.length; i++) {
         var icon = $('g g,path', icons[i]);
@@ -317,7 +387,7 @@ function updateUI(data) {
     $('.icon.clickable')
         .mouseover(function(self) {
             var context = $(self.target).contents().addBack();
-            $('g g,path', context).attr('fill', data.dark ? "#DDD" : "#222");
+            $('g g,path', context).attr('fill', hoverFill);
         })
         .mouseout(function(self) {
             var context = $(self.target).contents().addBack();
@@ -325,13 +395,15 @@ function updateUI(data) {
         })
         .contents().find('svg').add('svg.icon.clickable')
             .mousedown(function(self) {
-                $('g g,path', self.target).attr('fill', data.dark ? "#BBB" : "#444");
+                $('g g,path', self.target).attr('fill', pressFill);
             })
             .mouseup(function(self) {
-                $('g g,path', self.target).attr('fill', data.dark ? "#DDD" : "#222");
+                $('g g,path', self.target).attr('fill', hoverFill);
             })
     ;
-    $('#centerpiece').contents().find('g g,path').attr('fill', specFill);
+    $('#centerpiece').contents().find('g g,path').attr({
+        fill: data.dark ? '#444' : '#D8D8D8'
+    });
     if (data.albumUrl === null) {
         $('#album').css('background-image', 'none');
     } else {
@@ -395,19 +467,31 @@ function load(data) {
     }
 }
 
-function feedback(opinion) {
-    locked = true;
-    $.ajax(base + '/feedback/' + curStation + '/' + opinion).done(function() {
+var feedback = $.debounce(5000, true, function(opinion, songIndex) {
+    lock();
+    var sng = songs[songIndex || curSong];
+    $.ajax(
+        base + '/feedback/' + (sng.station || curStation) + '/' + opinion + '/' + sng.id
+    ).done(function() {
         switch(opinion) {
             case 'dislike':
-                next();
+                showLike[likeStatus.DISLIKE](sng, next);
+            break;
+            case 'undislike':
+                showLike[likeStatus.NEUTRAL](sng);
+            break;
+            case 'like':
+                showLike[likeStatus.LIKE](sng);
+            break;
+            case 'unlike':
+                showLike[likeStatus.NEUTRAL]();
             break;
             default:
-                locked = false;
+                unlock();
             break;
         }
     });
-}
+});
 
 if (!isApp) $(document).mousemove(function(e) {
 	if (!sidebar) return;
@@ -606,7 +690,7 @@ function init() {
 
     con = $('#stat .container');
     con.click($.debounce(5000, true, function(e) {
-        locked = true;
+        lock();
         var target = $(e.target).closest('.station');
         if (target.length && !target.hasClass('add')) {
             loadStation(target[0].dataset.id);
@@ -669,11 +753,6 @@ function init() {
         }
     });*/
     
-    /*$('.icon.clickable').each(function() {
-        $(this).contents().on('click touchstart', 'svg', function(event) {
-            eval(event.view.frameElement.onclick.toString().slice(28, -2));
-        });
-    });*/
     progBar
         .on('slide', function() {
             music().audio.currentTime = progBar.val()*music().duration();
@@ -691,11 +770,14 @@ function init() {
 $(window).load(function() {
     var functSlice = typeof InstallTrigger !== 'undefined' ? 26 : 28;
     $('.icon.clickable').each(function() {
-        $(this).contents().on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
-            if (!locked)
-                eval(event.view.frameElement.onclick.toString().slice(functSlice, -2));
-            //I can't for the life of me find a better solution...
-        }));
+        $(this).contents()
+            .on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
+                if (!locked)
+                    eval(event.view.frameElement.getAttribute('onclick'));
+                //I can't for the life of me find a better solution...
+            }))
+            .find('g g,path').css('transition', 'fill 200ms')
+        ;
     });
     $('#loadLogo').contents().find('g, path').css('fill', '#333');
     $('#songs').contents().find('svg')
@@ -716,20 +798,26 @@ $(window).load(function() {
     ;
 });
 
+function domLoaded() {
+    progBar = $('#progress');
+    body = $('body');
+    bkg = $('#background');
+    likeBtn = $('#like');
+    dislikeBtn = $('#dislike');
+    unlikeBtn = $('#unlike');
+    undislikeBtn = $('#undislike');
+}
+
 if (isApp) {
     document.addEventListener("deviceready", function() {
         $(document).ready(function() {
-            progBar = $('#progress');
-            body = $('body');
-            bkg = $('#background');
+            domLoaded();
             chooseTheme("frostedGlass", function() { login(init); });
         });
     }, false);
 } else {
     $(document).ready(function() {
-        progBar = $('#progress');
-        body = $('body');
-        bkg = $('#background');
+        domLoaded();
         chooseTheme("frostedGlass", init);
     });
 }

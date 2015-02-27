@@ -1,5 +1,11 @@
 @import('utils')
 
+@keyframes blink
+  0%
+    opacity 1
+  50%
+    opacity 0
+
 .noTransition
   vendor(transition, none)
 #minus
@@ -210,6 +216,7 @@ body
     margin-left 0.1em
     -moz-user-select none
     height 100% !important
+    vendor(animation, blink 1060ms ease-in-out infinite)
   span:not(.deleted) ~ .caret
     position absolute
   > div
