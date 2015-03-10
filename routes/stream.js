@@ -19,7 +19,9 @@ function bashEscape(arg) {
 }
 
 GLOBAL.stream = function(req, res) {
-    var query = util.format('%s - %s', req.params.artist, req.params.song);
+    var song   = req.params.song.replace('\0', '/');
+    var artist = req.params.artist.replace('\0', '/');
+    var query = util.format('%s - %s', artist, song);
     youtube.search.list({
         part: 'id,snippet',
         q: query,
@@ -31,7 +33,7 @@ GLOBAL.stream = function(req, res) {
     }, function(err, json) {
         var grooveshark = function() {
             if (req.params.dowhat == 'metadata') {
-                gs.Tinysong.getSongInfo(req.params.song, req.params.artist, function(err, songInfo) {
+                gs.Tinysong.getSongInfo(song, artist, function(err, songInfo) {
                     if (songInfo !== null) {
                         gs.Grooveshark.getStreamingUrl(songInfo.SongID, function(err, streamUrl) {
                             proc.exec('ffprobe -i "' + streamUrl + '" -show_format', function(err, stdout) {
@@ -44,7 +46,7 @@ GLOBAL.stream = function(req, res) {
                     }
                 });
             } else {
-                gs.Tinysong.getSongInfo(req.params.song, req.params.artist, function(err, songInfo) {
+                gs.Tinysong.getSongInfo(song, artist, function(err, songInfo) {
                     if (songInfo !== null) {
                         gs.Grooveshark.getStreamingUrl(songInfo.SongID, function(err, streamUrl) {
                             request(streamUrl)
@@ -54,7 +56,7 @@ GLOBAL.stream = function(req, res) {
                             .pipe(res);
                         });
                     } else {
-                        console.log('!> Song not found! (' + req.params.artist + ':' + req.params.song + ')');
+                        console.log('!> Song not found! (' + artist + ':' + song + ')');
                         res.end(''); //TODO: Tidy this up. Code coverage lacking
                     }
                 });
@@ -135,11 +137,11 @@ GLOBAL.stream = function(req, res) {
                     
                     var cmdOpts = ['-i', 'pipe:0', '-acodec', 'libmp3lame'];
                     if (req.params.dowhat == 'download') {
-                        res.setHeader('Content-disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(req.params.artist) + '%20-%20' + encodeURIComponent(req.params.song) + '.mp3');
+                        res.setHeader('Content-disposition', 'attachment; filename*=UTF-8\'\'' + encodeURIComponent(artist) + '%20-%20' + encodeURIComponent(song) + '.mp3');
                         cmdOpts.push(
                             '-id3v2_version', '3',
-                            '-metadata', 'title='  + bashEscape(req.params.song),
-                            '-metadata', 'artist=' + bashEscape(req.params.artist)
+                            '-metadata', 'title='  + bashEscape(song),
+                            '-metadata', 'artist=' + bashEscape(artist)
                         );
                     }
                     cmdOpts.push('-f', 'mp3', '-');

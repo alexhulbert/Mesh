@@ -22,7 +22,7 @@ var con;
 var sFreeze = false;
 var theme;
 var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
-var base = '';
+var base = location.href.slice(0, -5);
 var nativeMedia = false;
 var globalOverhead = 0;
 var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)|(chrome)/gi);
@@ -101,6 +101,14 @@ var onNoSong = $.throttle(20000, false, function(e) {
         });
     }
 });
+
+function encodeForURI(input) {
+    return encodeURIComponent(input)
+        .replace(/\(/g, "%28")
+        .replace(/\)/g, "%29")
+        .replace(/\//g, '%00')
+    ;
+}
 
 //This is probably a really bad idea
 function devTest(str) {
@@ -445,9 +453,7 @@ function newSong(cb, skip) {
 }
 
 function load(data) {
-    var artist = encodeURIComponent(data.artistName);
-    var song = encodeURIComponent(data.songName);
-    var srcUrl = base + '/stream/' + artist.replace(/\//g, '%2F') + '/' + song.replace(/\//g, '%2F');
+    var srcUrl = base + '/stream/' + encodeForURI(data.artistName) + '/' + encodeForURI(data.songName);
     if (data.len) {
         musicPlayer[+!mIndex].duration = function() {
             return data.len;
