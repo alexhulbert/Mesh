@@ -179,7 +179,8 @@ clr = #7d1313
 .clickable
   cursor pointer
   cursor hand
-
+.slimScrollBar:hover
+  opacity 0.3 !important
 .station,.song > div
   cursor pointer
   cursor hand
@@ -334,6 +335,10 @@ body
   overflow hidden
   vendor(transition, color 400ms)
   &.light
+    .slimScrollBar
+      background-color #FFF !important
+    .slimScrollRail
+      background-color #CCC !important
     .station span
       &:hover
         color #999
@@ -365,6 +370,10 @@ body
       background #444
       border-color #D8D8D8
   &.dark
+    .slimScrollBar
+      background-color #000 !important
+    .slimScrollRail
+      background-color #333 !important
     .station span
       &:hover
         color #666
