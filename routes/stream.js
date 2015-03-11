@@ -19,8 +19,8 @@ function bashEscape(arg) {
 }
 
 GLOBAL.stream = function(req, res) {
-    var song   = req.params.song.replace('\0', '/');
-    var artist = req.params.artist.replace('\0', '/');
+    var song   = req.params.song  .replace('\n', '/');
+    var artist = req.params.artist.replace('\n', '/');
     var query = util.format('%s - %s', artist, song);
     youtube.search.list({
         part: 'id,snippet',

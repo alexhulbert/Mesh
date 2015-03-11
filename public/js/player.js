@@ -106,9 +106,9 @@ var onNoSong = $.throttle(20000, false, function(e) {
 
 function encodeForURI(input) {
     return encodeURIComponent(input)
-        .replace(/\(/g, "%28")
-        .replace(/\)/g, "%29")
-        .replace(/\//g, '%00')
+        .replace( /\(/g, "%28")
+        .replace( /\)/g, "%29")
+        .replace(/%20/g, "%0A")
     ;
 }
 
@@ -502,8 +502,8 @@ var feedback = $.debounce(5000, true, function(opinion, songIndex) {
 });
 
 if (!isApp) $(document).mousemove(function(e) {
+	if (!sidebar) return;
     var side = $('#' + (sidebar == 1 ? 'stat' : 'song'));
-	if (!sidebar || side.find('.slimScrollBar').is(':hover')) return;
     mx = e.pageX;
     my = e.pageY;
 	if (sidebar == 1) {
@@ -526,6 +526,7 @@ if (!isApp) $(document).mousemove(function(e) {
 			onUp = true;
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalUp = setInterval(function() {
+			    if (side.find('.slimScrollRail,.slimScrollBar').is(':hover')) return;
 				var sub = (1 - my / ($(window).height() * 0.25)) * 7.5;
 				if (div.scrollTop() >= sub) div.slimScroll({
 					scrollBy: -sub + 'px',
@@ -545,6 +546,7 @@ if (!isApp) $(document).mousemove(function(e) {
 			onDown = true;
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalDown = setInterval(function() {
+			    if (side.find('.slimScrollRail,.slimScrollBar').is(':hover')) return;
 				var sub = (my - $(window).height() * 0.75) / ($(window).height() * 0.25) * 7.5;
 				if (div.scrollTop() <= (maxHeight - sub))
 				    div.slimScroll({
