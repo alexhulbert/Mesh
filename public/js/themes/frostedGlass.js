@@ -43,8 +43,8 @@ theme = {
                 glowBri = Math.min(color[2] + 50, 100);
             else 
                 glowBri = Math.max(color[2] - 25, 0);
-            $('#pauseStyle').html('#background.paused' + 
-                ((isApp && nativeMedia) ? ',html.mobile' : '') + ' #background { ' + 
+            $('#pauseStyle').html(
+                '#background.paused {' + 
                 'background-image: radial-gradient(circle closest-side, ' +
                 'hsl(' + color[0] + ',' + color[1] + ',' + glowBri + '%) 0%, ' + 
                 'hsl(' + color.join(',') + '%) 95%) !important; }'
@@ -52,7 +52,7 @@ theme = {
         } else {
             //Generate a blur
             var blur = 'blur(' + 6*px + 'px)';
-            if (typeof InstallTrigger !== 'undefined' || isApp)  {
+            if (typeof InstallTrigger !== 'undefined')  {
                 //FireFox doesn't support direct blur filter yet (only svgs)
                 blur = 'url("/img/filters.svg#';
                 blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
@@ -125,7 +125,7 @@ theme = {
         $('#download').css('left', '2.5vh');
         //Generate a blur value
         var blur = 'blur(' + 6 *px + 'px)';
-        if (typeof InstallTrigger !== 'undefined' || isApp)  {
+        if (typeof InstallTrigger !== 'undefined')  {
             //FireFox doesn't support direct blur filter yet (only svgs)
             blur = 'url("/img/filters.svg#';
             blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';

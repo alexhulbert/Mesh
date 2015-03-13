@@ -1,4 +1,3 @@
-var isApp = document.URL.indexOf('http://') === -1 && document.URL.indexOf('https://') === -1;
 var color = [0, "0%", 0]; //Changes according to album
 var isRunning = false;
 var musicPlayer = [{}, {}];
@@ -23,13 +22,10 @@ var sFreeze = false;
 var theme;
 var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = location.href.slice(0, -5);
-var nativeMedia = false;
 var globalOverhead = 0;
 var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)|(chrome)/gi);
 var colorThief = new ColorThief();
 var locked = false;
-var songScroll;
-var statScroll;
 var likeStatus = {
     NEUTRAL: 0,
     LIKE: 1,
@@ -462,17 +458,12 @@ function load(data) {
         };
     } else {
         musicPlayer[+!mIndex].duration = function() {
-            return isApp && nativeMedia ? this.audio.getDuration() : (this.audio.duration || Infinity);
+            return this.audio.duration || Infinity;
         };
     }
     musicPlayer[+!mIndex].audio.addEventListener('error', onNoSong);
-    if (isApp && nativeMedia) {
-        musicPlayer[+!mIndex].audio.release();
-        musicPlayer[+!mIndex].audio = new Media(srcUrl + (audioWorkaround ? '/legacy' : ''));
-    } else {
-        musicPlayer[+!mIndex].audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
-        musicPlayer[+!mIndex].audio.load();
-    }
+    musicPlayer[+!mIndex].audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
+    musicPlayer[+!mIndex].audio.load();
 }
 
 var feedback = $.debounce(5000, true, function(opinion, songIndex) {
@@ -501,7 +492,7 @@ var feedback = $.debounce(5000, true, function(opinion, songIndex) {
     });
 });
 
-if (!isApp) $(document).mousemove(function(e) {
+$(document).mousemove(function(e) {
 	if (!sidebar) return;
     var side = $('#' + (sidebar == 1 ? 'stat' : 'song'));
     mx = e.pageX;
@@ -509,16 +500,13 @@ if (!isApp) $(document).mousemove(function(e) {
 	if (sidebar == 1) {
 		var stat = $('#stat');
 		var op = 0;
-		if (stat.css('display') != 'none') {
+		if (stat.css('display') != 'none')
 			op = stat.width();
-		}
-		if (e.pageX > $('#stations').position().left + $('#stations').width() + op && !sFreeze) {
+		if (e.pageX > $('#stations').position().left + $('#stations').width() + op && !sFreeze)
 			$.sidr('close', 'stat');
-		}
 	} else {
-		if (e.pageX < ($('#song').position().left - $('#songs').width())) {
-			$.sidr('close', 'song');
-		}
+		if (e.pageX < ($('#song').position().left - $('#songs').width()))
+            $.sidr('close', 'song');
 	}
 	var div = side.find('.container');
 	if (e.pageY < $(window).height()*0.25) {
@@ -526,7 +514,7 @@ if (!isApp) $(document).mousemove(function(e) {
 			onUp = true;
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalUp = setInterval(function() {
-			    if (side.find('.slimScrollRail,.slimScrollBar').is(':hover')) return;
+			    if (side.find('.slimScrollRail:hover,.slimScrollBar:hover').length) return;
 				var sub = (1 - my / ($(window).height() * 0.25)) * 7.5;
 				if (div.scrollTop() >= sub) div.slimScroll({
 					scrollBy: -sub + 'px',
@@ -546,7 +534,7 @@ if (!isApp) $(document).mousemove(function(e) {
 			onDown = true;
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalDown = setInterval(function() {
-			    if (side.find('.slimScrollRail,.slimScrollBar').is(':hover')) return;
+			    if (side.find('.slimScrollRail:hover,.slimScrollBar:hover').length) return;
 				var sub = (my - $(window).height() * 0.75) / ($(window).height() * 0.25) * 7.5;
 				if (div.scrollTop() <= (maxHeight - sub))
 				    div.slimScroll({
@@ -570,7 +558,7 @@ function play() {
     $('#background').removeClass('paused');
     music().audio.play({ playAudioWhenScreenIsLocked: true });
     isRunning = true;
-    if (!nativeMedia || !isApp) theme.tick();
+    theme.tick();
 }
 
 function pause() {
@@ -653,50 +641,18 @@ function squeezebox(username, password, ip, port) {
 }
 
 function init() {
-    if (isApp) {
-        new Audio('').play();
-        $('object').each(function() {
-            var e = $(this);
-            $.ajax(e.data('url'), {
-                dataType: 'text'
-            }).done(function(resp) {
-                var newSvg = $(resp)
-                    .attr({
-                        id: e.attr('id'),
-                        class: e.attr('class')
-                    })
-                ;
-                newSvg
-                    .find('[onmouseover][onclick]')
-                    .addBack()
-                    .removeAttr('onmouseover onclick')
-                ;
-                e.removeAttr('id').after(newSvg).remove();
-            });
-        });
-    }
     for (var i in musicPlayer) {
-        if (isApp && nativeMedia) {
-            var mp = musicPlayer[i];
-            mp.audio = new Media('');
-            Object.defineProperty(mp.audio, "currentTime", {
-                set: function(value) {
-                    this.seekTo(value*1000);
-                }
-            });
-        } else {
-            var mp = musicPlayer[i];
-            mp.ctx = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext();
-            mp.audio = new Audio('');
-            mp.audioSrc = mp.ctx.createMediaElementSource(mp.audio);
-            mp.analyser = mp.ctx.createAnalyser();
-            mp.audioSrc.connect(mp.analyser);
-            mp.analyser.connect(mp.ctx.destination);
-            mp.frequencyData = new Uint8Array(mp.analyser.frequencyBinCount);
-            mp.audio.addEventListener('timeupdate', timeUpdate);
-        }
+        var mp = musicPlayer[i];
+        mp.ctx = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext();
+        mp.audio = new Audio('');
+        mp.audioSrc = mp.ctx.createMediaElementSource(mp.audio);
+        mp.analyser = mp.ctx.createAnalyser();
+        mp.audioSrc.connect(mp.analyser);
+        mp.analyser.connect(mp.ctx.destination);
+        mp.frequencyData = new Uint8Array(mp.analyser.frequencyBinCount);
+        mp.audio.addEventListener('timeupdate', timeUpdate);
     }
-    if (!nativeMedia || !isApp) theme.tick();
+    theme.tick();
     getStations();
 
     con = $('#stat .container');
@@ -790,7 +746,7 @@ $(window).load(function() {
             .find('g g,path').css('transition', 'fill 200ms')
         ;
     });
-    songScroll = $('#song .container').slimScroll({
+    $('#song .container').slimScroll({
         size: '1em',
         position: 'right',
         width: '100%',
@@ -802,7 +758,7 @@ $(window).load(function() {
         railBorderRadius: '0',
         borderRadius: '0'
     });
-    statScroll = $('#stat .container').slimScroll({
+    $('#stat .container').slimScroll({
         size: '1em',
         position: 'left',
         width: '100%',
@@ -844,19 +800,10 @@ function domLoaded() {
     undislikeBtn = $('#undislike');
 }
 
-if (isApp) {
-    document.addEventListener("deviceready", function() {
-        $(document).ready(function() {
-            domLoaded();
-            chooseTheme("frostedGlass", function() { login(init); });
-        });
-    }, false);
-} else {
-    $(document).ready(function() {
-        domLoaded();
-        chooseTheme("frostedGlass", init);
-    });
-}
+$(document).ready(function() {
+    domLoaded();
+    chooseTheme("frostedGlass", init);
+});
 
 $(document).on("keydown", function (e) {
     if (e.which === 8 && !$(e.target).is("input, textarea")) {
