@@ -38,12 +38,14 @@ GLOBAL.updateGenres = function(genres, next) {
             next(list);
         } else next(genres);
     });
-}
+};
 
-router.get('/search/:query', require('../user/isAuthenticated'), function(req, res) {
+router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), function(req, res) {
+    var query = req.params.query.replace(/\n/g, '/');
     var data = [];
     async.waterfall([
         function(next) { //Query genres
+            if (req.params.noGenres) return next(null, []);
             locks.findOne({
                 name: 'genres'
             }, {}, next);
@@ -58,17 +60,21 @@ router.get('/search/:query', require('../user/isAuthenticated'), function(req, r
                 next(null, genres.list);
             }
         },
-        function(genres, next) { //Process Genres
-            for (var i in genres) {
-                var genre = genres[i];
-                if (req.params.query.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') == genre.replace(/[^a-zA-Z0-9]/g, '')) {
-                    data.push({
-                        type: 'genre',
-                        name: genre,
-                        id: "GN" + i,
-                        img: '/img/noAlbum.png' //TODO: Fix?
-                    });
-                    break;
+        function(genres, next) { //Process Genres/Albums
+            if (req.params.noGenres) {
+                //TODO: get albums
+            } else {
+                for (var i in genres) {
+                    var genre = genres[i];
+                    if (query.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') == genre.replace(/[^a-zA-Z0-9]/g, '')) {
+                        data.push({
+                            type: 'genre',
+                            name: genre,
+                            id: "GN" + i,
+                            img: '/img/noAlbum.png' //TODO: Fix?
+                        });
+                        break;
+                    }
                 }
             }
             next(null);
@@ -76,7 +82,7 @@ router.get('/search/:query', require('../user/isAuthenticated'), function(req, r
         function(next) { //Get Artists
             echo('artist/search').get({
                 results: 5,
-                name: req.params.query,
+                name: query,
                 fuzzy_match: true,
                 //sort: 'familiarity-desc',
                 bucket: 'images'
@@ -104,7 +110,7 @@ router.get('/search/:query', require('../user/isAuthenticated'), function(req, r
         function(next) { //Get songs
             echo('song/search').get({
                 results: 10,
-                combined: req.params.query,
+                combined: query,
                 //sort: 'song_hotttnesss-desc',
                 bucket: 'audio_summary'
             }, next);

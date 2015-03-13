@@ -2,7 +2,7 @@ theme = {
     "sidebar": function(mode) { /* Runs when the sidebar is opened/closed*/ },
     "draw": function(data) {
         //Runs when a new song is loaded
-        $('#stationAdder,.noUi-base').css({
+        $('#searchView,.noUi-base').css({
             background: 'hsl(' + data.color.join(',') + '%)'
         }); //Setting search view and progress bar background-color
         var hsl =

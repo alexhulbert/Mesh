@@ -1,25 +1,26 @@
+var curView = "";
 var handler = function() {
     $('.fancyInput :input').focus();
 };
 var fi;
 
-function clrStation() {
+function clrSearch() {
     fancyInput.removeChars(fi.siblings('div'), [0]);
     fi.val('');
-    $('#stationAdder').removeClass('choose done');
+    $('#searchView').removeClass('choose done');
     $('.card').remove();
 }
 
-function newStation() {
+function initSearch() {
     fi = $('#answer :input');
     fi.fancyInput();
-    $('#minus').click(hideStation);
-    $('#cancel').click(clrStation);
+    $('#minus').click(hideSearch);
+    $('#cancel').click(clrSearch);
 }
 
-function hideStation() {
-    clrStation();
-    var sa = $('#stationAdder');
+function hideSearch() {
+    clrSearch();
+    var sa = $('#searchView');
     sa.removeClass('visible');
     setTimeout(function() {
         sa.css('display', 'none');
@@ -30,12 +31,13 @@ function hideStation() {
     ;
 }
 
-function showStation() {
+function showSearch(view) {
+    curView = view;
     $('#bubble').attr('style', '');
     $.sidr('close', 'stat');
-    $('#stationAdder').css('display', 'block');
+    $('#searchView').css('display', 'block');
     setTimeout(function() {
-        $('#stationAdder')
+        $('#searchView')
             .removeClass('done')
             .addClass('visible')
             .find(':input').val('')
@@ -47,13 +49,14 @@ function showStation() {
 
 function addStat() {
     var query = $('#answer :input').val();
+    var bootstrapMode = curView == 'bootstrap';
     //Loading sign
-    $.ajax(base + '/search/' + encodeURIComponent(query).replace(/\//g, '%2F')).done(function(results) {
+    $.ajax(base + '/search/' + encodeForURI(query) + (bootstrapMode ? '' : '/noGenre' )).done(function(results) {
         for (var i in results) {
             var result = results[i];
             //jshint multistr:true
             var elem = $('\
-                <div class="card" onclick="bootstrapStation(this);">\
+                <div class="card" onclick="selectSong(this);">\
                     <div class="image"></div>\
                     <span class="type"></span>\
                     <span class="name"></span>\
@@ -72,21 +75,51 @@ function addStat() {
             }
             elem.appendTo('#container');
         }
-        $('#stationAdder').addClass('choose');
+        $('#searchView').addClass('choose');
     });
 }
 
-function bootstrapStation(self) {
-    $('#stationAdder').removeClass('choose').addClass('done');
+function selectSong(self) {
+    $('#searchView').removeClass('choose').addClass('done');
     var target = $(self);
     var query = target.data('query');
-    var id = target.data('id');
     if (target.find('.type').text() == 'song')
         query = $.parseHTML(target.find('.name').html().split('<br>')[1])[0].textContent;
+    var funct = (curView == 'bootstrap' ? bootstrapSearch : playSearch)
+    funct(target, query);
+}
+
+function page(doUp) {
+    if ($('#' + (doUp ? 'up' : 'down')).hasClass('ghosted')) return;
+    var fi = $('.fancyInput');
+    var co = $('#container');
+    var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
+
+    co.css('margin-top', mtop + (doUp ? -8.25 : 8.25) + 'em');
+
+    $('#down').toggleClass('ghosted', mtop == -1);
+    $('#up').toggleClass('ghosted', (fi.offset().top + fi.height()) < (co.offset().top + co.height() - 8.25*px));
+}
+
+function playSearch(target, query) {
+    var id = target.data('id');
+    switch(target.find('.type').text()) {
+        case 'song': 
+            playSong(id);
+        break;
+        default:
+            alert('Feature Not Yet Implemented. Please listen to a song instead.');
+        break;
+    }
+    hideSearch();
+}
+
+function bootstrapSearch(target, query) {
+    var id = target.data('id');
+    var nsImg = target.data('img') || 'img/noAlbum.png';
     $.ajax('/bootstrap/' + query + '/' + id).done(function(data) {
         $.ajax('/stations/' + data).done(function(subdata) {
             var newStation = JSON.parse(subdata);
-            var nsImg = target.data('img') || 'img/noAlbum.png';
             $('#bubble').css('background-image', 'url("' + nsImg + '")');
             $('<img/>').attr('src', nsImg).load(function() {
                 var newStat = appendStation(newStation);
@@ -97,7 +130,7 @@ function bootstrapStation(self) {
                 sFreeze = true;
                 $.sidr('open', 'stat');
                 setTimeout(function() {
-                    hideStation();
+                    hideSearch();
                     bubble.animate($.extend(newStat.offset(), {
                         margin: 0,
                         width:  '7.875em',
@@ -127,16 +160,4 @@ function bootstrapStation(self) {
             });
         });
     });
-}
-
-function page(doUp) {
-    if ($('#' + (doUp ? 'up' : 'down')).hasClass('ghosted')) return;
-    var fi = $('.fancyInput');
-    var co = $('#container');
-    var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
-
-    co.css('margin-top', mtop + (doUp ? -8.25 : 8.25) + 'em');
-
-    $('#down').toggleClass('ghosted', mtop == -1);
-    $('#up').toggleClass('ghosted', (fi.offset().top + fi.height()) < (co.offset().top + co.height() - 8.25*px));
 }

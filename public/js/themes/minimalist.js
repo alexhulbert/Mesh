@@ -1,7 +1,7 @@
 theme = {
     "sidebar": function() { },
     "draw": function(data) {
-        $('#stationAdder').css('background', 'hsl(' + data.color.join(',') + '%)');
+        $('#searchView').css('background', 'hsl(' + data.color.join(',') + '%)');
         $('.sidr .container,.fancyInput').css('background-color', 'hsl(' + data.color[0] + ',' + data.color[1] + ',' + Math.min(data.color[2] + (data.dark ? -10 : 10), 100) + '%)');
         var str = data.songName + '<br>' + data.artistName;
         if (data.albumName !== null) str += ' - ' + data.albumName;

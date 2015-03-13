@@ -89,7 +89,12 @@ var showLike = [
 //window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));};
 
 var onNoSong = $.throttle(20000, false, function(e) {
-    if (e.path[0].error.code == 4) {
+    var ecode = 0;
+    if (e.currentTarget)
+        ecode = e.currentTarget.error.code;
+    else if (e.path)
+        ecode = e.path[0].error.code;
+    if (ecode == 4) {
         console.log("ERROR LOADING SONG!", e);
         var badSong = $('.song.current');
         mesh(songs.length, 3, function() {
@@ -104,7 +109,7 @@ function encodeForURI(input) {
     return encodeURIComponent(input)
         .replace( /\(/g, "%28")
         .replace( /\)/g, "%29")
-        .replace(/%20/g, "%0A")
+        .replace(/%2F/g, "%0A")
     ;
 }
 
@@ -625,9 +630,7 @@ function squeezebox(username, password, ip, port) {
     if (typeof ip === 'undefined') ip = 'localhost';
     if (typeof port === 'undefined') port = 9000;
     if (typeof cb === 'undefined') cb = $.noop;
-
     var file = (base || location.protocol + '//' + location.host) + '/stations/' + btoa(username + ':' + password).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~') + '.opml';
-
     window.open('http://' + ip + ':' + port + '/plugins/Favorites/index.html?' + $.param({
         index: 2,
         sess: 1,
@@ -731,7 +734,7 @@ function init() {
             pb = true;
         })
     ;
-    newStation();
+    initSearch();
 };
 
 $(window).load(function() {

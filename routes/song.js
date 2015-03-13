@@ -24,7 +24,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
     var workaround =
         ~(req.params.overhead || '').indexOf('legacy') ||
         ~(req.params.fileName || '').indexOf('legacy') || 
-        ~['pls', 'asx'].indexOf(req.params.type)
+        ~['pls', 'asx', 'm3u'].indexOf(req.params.type)
     ;
     var data;
     var end = false; 
@@ -86,12 +86,29 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 var playlist = '[playlist]\n';
                 playlist += 'File1=' + process.env.URL + '/stream/' + encodeURIComponent(data[0].artistName) + '/' + encodeURIComponent(data[0].songName) + '/legacy.mp3' + '\n';
                 playlist += 'Title1=' + data[0].artistName + ' - ' + data[0].songName + '\n';
-                if (data[0].len) playlist += 'Length1=' + data[0].len + '\n';
+                if (data[0].len) playlist += 'Length1=' + Math.floor(data[0].len) + '\n';
                 playlist += 'File2=' + process.env.URL + '/grab/pls/' + req.params.sid + '/' + (parseInt(req.params.overhead) + 1) + '/' + req.query.key + '.pls\n';
                 playlist += 'Title2=' + data[1].artistName + ' - ' + data[1].songName + '\n';
                 //if (data[1].len) playlist += 'Length2=' + data[1].len + '\n';
-                playlist += 'NumberOfEntries=2\nVersion=2';
+                playlist += 'Length2=-1NumberOfEntries=2\nVersion=2';
                 res.end(playlist);
+            break;
+            case 'm3u':
+                res.setHeader('Content-Type', 'application/x-mpegurl');
+                res.end(
+                    '#EXTM3U' + 
+                    '\n#EXTINF:' +
+                    Math.floor(data[0].len) +
+                    ',' + data[0].artistName + ' - ' + data[0].songName + 
+                    '\n' + process.env.URL + '/stream/' +
+                    encodeURIComponent(data[0].artistName) + '/' +
+                    encodeURIComponent(data[0].songName) + '/legacy.mp3' + 
+                    '\n#EXTINF:-1,' +
+                    data[1].artistName + ' - ' + data[1].songName +
+                    '\n' + process.env.URL + '/grab/m3u/' +
+                    req.params.sid + '/' + (parseInt(req.params.overhead) + 1) +
+                    '/' + req.query.key + '.m3u'
+                );
             break;
             case 'asx':
                 res.render('playlist', {

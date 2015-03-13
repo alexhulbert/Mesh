@@ -11,7 +11,7 @@ block scripts
  | /js/lib/jquery.sortable.min.js
  | /js/lib/jquery.throttle.min.js
  | /js/lib/jquery.slimscroll.min.js
- | /js/newStation.js dynamic
+ | /js/searchView.js dynamic
  | /js/player.js dynamic
 
 block css
@@ -21,7 +21,7 @@ block css
 block content
   #player
     style#pauseStyle
-    +icon('logo', '../logo')
+    +icon('searchSong', 'draggable', 'showSearch("song");')
     #background
     +icon('stations', 'stations', 'noclick')
     +icon('songs', 'history', 'noclick')
@@ -53,7 +53,7 @@ block content
           +icon('dislike', 'brokenHeart')
     #stat
       .container
-        .add.station(onclick='showStation();', data-id='-1')
+        .add.station(onclick='showSearch("bootstrap");', data-id='-1')
           div
       #scUp
       #scDown
@@ -64,13 +64,13 @@ block content
           span
             span
     input#search
-  #stationAdder
+  #searchView
     #minus.clickable
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style="margin-top: -1em")
     section#answer
-      span#cancel &#10005;
+      span#cancel.clickable &#10005;
       .fancyInput
         input(type='text')
   #bubble
