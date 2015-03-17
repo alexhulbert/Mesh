@@ -15,6 +15,10 @@ block content
     label#pass.label PASSWORD
     #btn
       button SUBMIT
+  #register
+    | Don't have an account?&nbsp;
+    u
+      a(href='/user/signup') Make one here!
   if error != ''
     script(type='text/javascript').
       document.body.onload = function() {
