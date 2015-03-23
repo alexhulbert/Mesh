@@ -52,11 +52,19 @@ router.get('/station/:action/:sid', require('../user/isAuthenticated'), function
                 function(sessid, next) {
                     var recentlyPlayed = [];
                     if (req.user.stations[req.params.sid].recentlyPlayed) {
-                        recentlyPlayed.push('');
                         for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
                             recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
                         }
                     }
+                    if (req.user.recent) {
+                        for (var i = 0; i < req.user.recent.length; i+= 16) {
+                            var recentSong = req.user.recent.slice(i, i+16);
+                            if (~recentlyPlayed.indexOf(recentSong))
+                                recentlyPlayed.splice(recentlyPlayed.indexOf(recentSong), 1);
+                            recentlyPlayed.push(recentSong);
+                        }
+                    }
+                    if (recentlyPlayed.length) recentlyPlayed.splice(0, 0, '');
                     
                     var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
                                + process.env.ECHONEST_KEY + '&session_id=' + sessid

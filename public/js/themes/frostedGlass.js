@@ -1,3 +1,4 @@
+a=b=0
 theme = {
     "sidebar": function(mode) { /* Runs when the sidebar is opened/closed*/ },
     "draw": function(data) {
@@ -31,11 +32,6 @@ theme = {
                 filter: '',
                 '-webkit-filter': ''
             }); //Set the main background and remove the filter
-            $('#background').css({
-                'z-index': 0,
-                'width': '100%',
-                'height': '100%'
-            }); //z-index 0 required here
             
             //Getting the default brightness for the circle 
             var glowBri;
@@ -65,10 +61,8 @@ theme = {
                 'background-position': 'center'
             }); //Set the background image to the album (obviously)
             $('#background').css({
-                'z-index': -1,
-                'width': 'auto',
-                'height': 'auto'
-            }); //z-index -1 required here to see #frost
+                background: 'rgba(' + (data.dark ? '0,0,0' : '255,255,255') + ',0.15)'
+            }); //Fading the background so you can see the UI Elements
             $('#frost').css({
                 filter: blur,
                 '-webkit-filter': 'blur(' + 6*px + 'px)'
@@ -91,20 +85,20 @@ theme = {
         avg *= 4; //Change this to make the circle more sensitive
         
         var hslVal, bri;
-        var albumMissing =
+        var hasAlbum =
             typeof songs[curSong] !== 'undefined' &&
             typeof songs[curSong].albumUrl !== 'undefined' &&
             songs[curSong].albumUrl != '/img/noAlbum.png'
         ;
         //Feel free to tweak these ratios on your own Higher -> colorful/subtle
-        var ratio = albumMissing?
-            0.500: //This is for when there isn't an album
-            0.735; //This is for when an album is present
+        var ratio = hasAlbum ?
+            +0.500: //This is for when there isn't an album
+            -0.333; //This is for when an album is present
         if (light)
             bri = (((color[2] + (100 - avg*0.75))/2 - 10)*ratio + (100 - avg))*(1 - ratio);
         else
             bri = Math.max((color[2] + avg*0.75 + 25)/3, color[2] + 25)*ratio + avg*(1 - ratio);
-        if (albumMissing) {
+        if (hasAlbum) {
             body.css('background', 'hsl(' + 
                 color[0] + ',' + parseFloat(color[1])*0.8 + '%,' + bri
             + '%)'); //Add colored background edges is there's an album image
@@ -131,7 +125,12 @@ theme = {
             blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
             blur += 'Blur")';
         }
-        bkg.css('background', 'none');
+        bkg.css({
+            background: 'none',
+            width: '100%',
+            height: '100%',
+            'z-index': 0
+        });
         //Make the real background object
         $('<div></div>')
             .attr({

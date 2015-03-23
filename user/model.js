@@ -27,7 +27,8 @@ var userSchema = mongoose.Schema({
     activated: false,
     verifyToken: String,
     elevated: false,
-    order: [String]
+    order: [String],
+    recent: String
 });
 
 userSchema.pre('save', function(next) {

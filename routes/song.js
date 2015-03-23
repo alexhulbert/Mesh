@@ -11,7 +11,8 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
-var max = 64; //TODO: ADD TO OPTION SECTION
+var localMax  = 16; //TODO: ADD TO OPTION SECTION
+var globalMax = 1024;
 
 function translate(req, res, next) {
     if (typeof req.params.fileName !== 'undefined' && req.params.fileName.slice(-1 * (req.params.type.length + 1)) == '.' + req.params.type)
@@ -65,9 +66,15 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 //TODO: Implement Skip Stuff
                 if (!req.user.stations[req.params.sid].recentlyPlayed)
                     req.user.stations[req.params.sid].recentlyPlayed = [];
+                if (!req.user.recent)
+                    req.user.recent = [];
                 req.user.stations[req.params.sid].recentlyPlayed =
                     jrs.id.slice(2) +
-                    req.user.stations[req.params.sid].recentlyPlayed.slice(0, (max-1)*16)
+                    req.user.stations[req.params.sid].recentlyPlayed.slice(0, (localMax-1)*16)
+                ;
+                req.user.recent =
+                    jrs.id.slice(2) +
+                    req.user.recent.slice(0, (globalMax-1)*16)
                 ;
                 req.user.markModified('stations');
                 req.user.save(function() {

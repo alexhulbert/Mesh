@@ -28,7 +28,7 @@ clr = #7d1313
   position absolute
   margin auto
   left 2.5vw
-  top 2.5vw
+  top calc(2.5vw + 1.5em)
   width 3em
   z-index 1
 #stations
@@ -98,6 +98,7 @@ clr = #7d1313
 #progress
   pos(0, 0, top left, 100%, 0.2em)
   margin-top -0.2em
+  overflow hidden
   z-index 3
 #search
   display none
@@ -207,12 +208,12 @@ clr = #7d1313
       opacity 0
   border-radius 100vw
   &.current
-    margin-bottom 10vh
+    margin-bottom 4.5em
     &:after
       content "Now Playing\a" attr(title)
       white-space pre
       margin-top 2.5vh
-  margin 7vh auto 0 auto
+  margin 2.5em auto 0 auto
   span
     cursor inherit
     transition opacity 350ms
@@ -266,21 +267,21 @@ clr = #7d1313
 .song
   left 0
   right 0
-  margin-top 5vh
+  margin-top 2em
   vendor(transition, margin 350ms ease)
   &.next
     filter url('/img/filters.svg#grayscale')
     vendor(filter, grayscale(100%))
     opacity 0.95
   &:last-child
-    margin-bottom 5vh
+    margin-bottom 2em
   span
     width 11.25em
     position relative
     span
       display table
       position absolute
-      margin 1em 0
+      margin 1.5em 0
       width 22.5em
       height auto
       opacity 0
@@ -297,7 +298,7 @@ clr = #7d1313
       background-size cover
       content ''
   &:hover
-    margin-bottom 5em
+    margin-bottom 6em
     div
       margin 0 auto 0 3.25em
       vandor(transition, margin 400ms ease 50ms)
@@ -317,7 +318,6 @@ clr = #7d1313
     height 1.5em
     border-radius 100vw
     margin-left -0.75em
-    overflow hidden
     &:before
       content ""
       position absolute
@@ -345,14 +345,14 @@ body
         color #999
       &:active
         color #FFF
-    color #C9C9C9
+    color #DDD
     #progress
       &.bigHandle .noUi-handle
         &:hover
           background-color #999
         &:active
           background-color #FFF
-        background-color #C9C9C9
+        background-color #DDD
       background-color #FFF
       .noUi-background
         background-color #000
@@ -363,6 +363,8 @@ body
     .station.add
       background-image url('/img/icons/add_light.svg')
       vendor(box-shadow, 0 0 0 0.15em #FFF inset)
+    .station:not(.add):not(.current) div,.song:not(.current) div::after
+      box-shadow 0 0 0 0.15em rgba(200, 200, 200, 0.5)
     .song.current div
       border 0.10em #FFF solid
     .song.next div
@@ -380,14 +382,16 @@ body
         color #666
       &:active
         color #000
-    color #252525
+    .station:not(.add):not(.current) div,.song:not(.add):not(.current) div::after
+      box-shadow 0 0 0 0.15em rgba(50, 50, 50, 0.5)
+    color #222
     #progress
       &.bigHandle .noUi-handle
         &:hover
           background-color #666
         &:active
           background-color #000
-        background-color #252525
+        background-color #222
       background-color #000
       .noUi-background
         background-color #FFF

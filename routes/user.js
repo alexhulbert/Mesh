@@ -6,7 +6,7 @@ var blacklist = ["squeezeboxId", "resetPasswordToken", "resetPasswordExpires", "
 //Test Status
 
 router.get('/user/authenticated', function(req, res) {
-    res.end(req.isAuthenticated() + 0);
+    res.end(+req.isAuthenticated()+"");
 });
 
 //Get User Model
@@ -30,6 +30,12 @@ router.get('/user/logout', require("../user/isAuthenticated"), function(req, res
 
 router.post('/user/login', passport.authenticate('login', {
 	successRedirect: '/home',
+	failureRedirect: '/user/login',
+	failureFlash: true
+}));
+
+router.post('/user/login/noredirect', passport.authenticate('login', {
+    successRedirect: '',
 	failureRedirect: '/user/login',
 	failureFlash: true
 }));

@@ -183,32 +183,27 @@ function refreshStations() {
     });
 }
 
-function login(cb, tries) {
-    if (typeof tries === 'undefined') tries = 1;
+function login(cb) {
     $.ajax(base + '/user/authenticated').done(function(loggedIn) {
-        if (loggedIn != "true") {
+        if (!+loggedIn) {
             var creds = {
-                email: localStorage.email || prompt("Email"),
-                password: localStorage.password || prompt("Password")
+                email:    $('#email').val(),
+                password: $('#pass' ).val()
             };
 
             $.post(base + '/user/login', creds).done(function(resp) {
                 if (resp.redirect.slice(-4) == 'home') {
-                    localStorage.email = creds.email;
-                    localStorage.password = creds.password;
-                    cb(resp.slice(7));
+                    var csid = resp.getResponseHeader('csid');
+                    if (csid) localStorage.csid = csid;
+                    cb(true);
                 } else {
-                    if (tries <= 3) {
-                        alert("Incorrect Credentials.");
-                        login(cb, tries + 1);
-                    } else {
-                        //ERROR: Get an account!
-                    }
+                    $('#loginError').text(
+                        $('#err', resp).text() || 'Invalid Credentials'
+                    );
+                    cb(false);
                 }
             });
-        } else {
-            cb();
-        }
+        } else cb(false);
     });
 }
 
@@ -269,6 +264,10 @@ function playSong(id) {
 }
 
 function mesh(ind, part, callback) {
+    if (ind == (curSong + 1) && inQueue) {
+        part = 2;
+        inQueue = false;
+    }
     if (!part) part = 3;
     lock();
     var cb = function() {
@@ -277,10 +276,6 @@ function mesh(ind, part, callback) {
     };
     if (typeof ind === 'undefined') ind = songs.length;
     if (ind >= songs.length) {
-        if (inQueue) {
-            part = 2;
-            inQueue = false;
-        }
         if (part & 1) {
             newSong(function(data) {
                 nextData = data;
@@ -298,10 +293,6 @@ function mesh(ind, part, callback) {
             cb();
         }
     } else {
-        if (inQueue) {
-            songs.push(nextData);
-            inQueue = false;
-        }
         var soin = songs[ind];
         if (part & 1) {
             load(soin);
@@ -378,13 +369,13 @@ function updateUI(data) {
     if (data.dark) {
         $('body').addClass('light').removeClass('dark');
         light = false;
-        fill = "#C9C9C9";
+        fill = "#DDD";
         hoverFill = "#999";
         pressFill = "#FFF";
     } else {
         light = true;
         $('body').addClass('dark').removeClass('light');
-        fill = "#252525";
+        fill = "#222";
         hoverFill = "#666";
         pressFill = "#000";
     }
