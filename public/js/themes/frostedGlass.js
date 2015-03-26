@@ -39,12 +39,6 @@ theme = {
                 glowBri = Math.min(color[2] + 50, 100);
             else 
                 glowBri = Math.max(color[2] - 25, 0);
-            $('#pauseStyle').html(
-                '#background.paused {' + 
-                'background-image: radial-gradient(circle closest-side, ' +
-                'hsl(' + color[0] + ',' + color[1] + ',' + glowBri + '%) 0%, ' + 
-                'hsl(' + color.join(',') + '%) 95%) !important; }'
-            ); //Setting up a default circle for when music is paused
         } else {
             //Generate a blur
             var blur = 'blur(' + 6*px + 'px)';

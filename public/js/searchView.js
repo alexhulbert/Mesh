@@ -4,6 +4,17 @@ var handler = function() {
 };
 var fi;
 
+function albumToUrl(url, cb) {
+    var toAlbumId = [
+        [/^.*amazon\.com\/images\/P\/(.+?)\.([a-z]{3})$/, 'AM/$1/$2'],
+        [/https?:\/\/userserve-[a-z]{2}.last.fm\/serve\/[0-9x]+\/([0-9]+).([a-z]{3})/, 'FM/$1/$2'],
+        [/^([A,F]M\/)|(\/[a-z]{3})$|[^\.0-9A-Za-z]+/g, '$1$2']
+    ];
+    for (var i in toAlbumId)
+        url = url.replace(toAlbumId[i][0], toAlbumId[i][1]);
+    $.ajax(base + '/proxy/' + url).done(cb);
+}
+
 function clrSearch() {
     fancyInput.removeChars(fi.siblings('div'), [0]);
     fi.val('');
@@ -64,12 +75,13 @@ function addStat() {
             ').attr({
                 'data-img': result.img,
                 'data-id': result.id,
-                'data-query': query
+                'data-query': query,
+                'data-album': result.album
             });
             elem.find('.type').text(result.type);
             elem.find('.image').attr('style', 'background-image: url(' + result.img + ')');
             if (result.type == 'song') {
-                elem.find('.name').html(result.artist + '<br>' + result.song);
+                elem.find('.name').html(result.song + '<br>' + result.artist);
             } else {
                 elem.find('.name').text(result.name);
             }
@@ -105,7 +117,21 @@ function playSearch(target, query) {
     var id = target.data('id');
     switch(target.find('.type').text()) {
         case 'song': 
-            playSong(id);
+            var artistSong = target.find('.name').html().split('<br>');
+            albumToUrl(target.find('.image').attr('style').slice(22, -1), function(dataStr) {
+                $.ajax(base + '/stream/' + artistSong[0] + '/' + artistSong[1] + '/metadata').done(function(len) {
+                    colorGen([{
+                        id:         target.data('id'),
+                        songName:   artistSong[1],
+                        artistName: artistSong[0],
+                        albumName:  target.data('album'),
+                        albumUrl:   dataStr,
+                        len: parseFloat(len)
+                    }], function(searchRes) {
+                        playSong(searchRes, 'next');
+                    });
+                });
+            });
         break;
         default:
             alert('Feature Not Yet Implemented. Please listen to a song instead.');

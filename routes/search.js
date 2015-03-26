@@ -125,7 +125,8 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                         type: 'song',
                         id: jrs.id,
                         artist: jrs.artist_name,
-                        song: jrs.title
+                        song: jrs.title,
+                        album: '(No Album)'
                     });
                     played.push(jrs.artist_name + ':' + jrs.title);
                 }
@@ -139,6 +140,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                     handlers: {
                         success: function(dta) {
                             if (typeof dta.track.album !== 'undefined') {
+                                duplicate.album = dta.track.album.title;
                                 var str = dta.track.album.image[dta.track.album.image.length - 1]['#text'];
                                 if (str.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') !== 0)
                                     duplicate.img = str;

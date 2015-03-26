@@ -253,14 +253,35 @@ function next() {
     mesh(curSong + 1, 3);
 }
 
-function playSong(id) {
-    $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/legacy' : '')).done(function(data) {
-       colorGen(JSON.parse(data), function(first, second) {
-           nextData = first;
-           load(first);
-           mesh(songs.length, 2, $.noop);
-       });
-   });
+function playSong(data, type) {
+    var funct;
+    switch(type) {
+        case 'last':
+            funct = function(d) {
+                songs.push(d);
+                updateHistory('add', songs.length - 1);
+            };
+        break;
+        case 'next':
+            funct = function(d) {
+                songs.splice(curSong + 1, 0, d);
+                updateHistory('add', curSong + 1);
+            };
+        break;
+        default:
+            funct = function(d) {
+                nextData = d;
+                load(d);
+                mesh(songs.length, 2);
+            };
+        break;
+    }
+    
+    if (typeof data === "string") {
+        $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/legacy' : '')).done(function(dataStr) {
+            funct(JSON.parse(dataStr));
+        });
+    } else funct(data);
 }
 
 function mesh(ind, part, callback) {
@@ -340,17 +361,17 @@ function updateHistory(action, param) {
                     e.data('id', parseInt(e.data('id')) - 1);
                 }
             });
-
         break;
         case 'add':
             var data = songs[param];
-            $('#song .container > div:first-child').after(
+            if (!data) return;
+            $('#song .container > div:eq(-' + (param + 1) + ')').after(
                 '<div class="song"><div onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div><span><span>"{0}"<br>{1}<br>{2}</span></span></div>'.format(
                     data.songName,
                     data.artistName,
                     data.albumName === null ? '(No Album)' : data.albumName,
                     data.albumUrl,
-                    songs.length - 1
+                    param
                 )
             );
         break;
