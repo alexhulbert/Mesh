@@ -62,7 +62,33 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
         },
         function(genres, next) { //Process Genres/Albums
             if (req.params.noGenres) {
-                //TODO: get albums
+                lastfm.request('album.search', {
+                    album: query,
+                    limit: 10,
+                    handlers: {
+                        success: function(dta) {
+                            var results = dta.results.albummatches.album;
+                            for (var r in results) {
+                                var album = results[r];
+                                var img = album.image[album.image.length - 1]['#text'];
+                                if (img.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') === 0)
+                                    img = '/img/noAlbum.png';
+                                var albumObj = {
+                                    type: 'album',
+                                    name: album.name,
+                                    artist: album.artist,
+                                    img: img
+                                };
+                                if (album.mbid) albumObj.id = album.mbid;
+                                data.push(albumObj);
+                            }
+                            next(null);
+                        },
+                        error: function(err) {
+                            next(null);
+                        }
+                    }
+                });
             } else {
                 for (var i in genres) {
                     var genre = genres[i];
@@ -76,8 +102,8 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                         break;
                     }
                 }
+                next(null);
             }
-            next(null);
         },
         function(next) { //Get Artists
             echo('artist/search').get({
@@ -109,9 +135,9 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
         },
         function(next) { //Get songs
             echo('song/search').get({
-                results: 10,
-                combined: query,
-                //sort: 'song_hotttnesss-desc',
+                results: 20,
+                title: query,
+                sort: 'song_hotttnesss-desc',
                 bucket: 'audio_summary'
             }, next);
         },

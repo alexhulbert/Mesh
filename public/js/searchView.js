@@ -3,8 +3,10 @@ var handler = function() {
     $('.fancyInput :input').focus();
 };
 var fi;
+var co;
 
 function albumToUrl(url, cb) {
+    if (url == '/img/noAlbum.png') return cb(url);
     var toAlbumId = [
         [/^.*amazon\.com\/images\/P\/(.+?)\.([a-z]{3})$/, 'AM/$1/$2'],
         [/https?:\/\/userserve-[a-z]{2}.last.fm\/serve\/[0-9x]+\/([0-9]+).([a-z]{3})/, 'FM/$1/$2'],
@@ -19,11 +21,12 @@ function clrSearch() {
     fancyInput.removeChars(fi.siblings('div'), [0]);
     fi.val('');
     $('#searchView').removeClass('choose done');
-    $('.card').remove();
+    $('.card:not(.arrow)').remove();
 }
 
 function initSearch() {
     fi = $('#answer :input');
+    co = $('#container');
     fi.fancyInput();
     $('#minus').click(hideSearch);
     $('#cancel').click(clrSearch);
@@ -80,14 +83,21 @@ function addStat() {
             });
             elem.find('.type').text(result.type);
             elem.find('.image').attr('style', 'background-image: url(' + result.img + ')');
-            if (result.type == 'song') {
-                elem.find('.name').html(result.song + '<br>' + result.artist);
-            } else {
-                elem.find('.name').text(result.name);
+            switch(result.type) {
+                case 'song':
+                    elem.find('.name').html(result.song + '<br>' + result.artist);
+                break;
+                case 'album':
+                    elem.find('.name').html(result.artist + '<br>' + result.name);
+                break;
+                default:
+                    elem.find('.name').text(result.name);
+                break;
             }
             elem.appendTo('#container');
         }
         $('#searchView').addClass('choose');
+        refreshScroll();
     });
 }
 
@@ -101,35 +111,93 @@ function selectSong(self) {
     funct(target, query);
 }
 
-function page(doUp) {
-    if ($('#' + (doUp ? 'up' : 'down')).hasClass('ghosted')) return;
-    var fi = $('.fancyInput');
-    var co = $('#container');
+function refreshScroll() {
     var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
+    if (mtop == -1)
+        $('#up').fadeOut();
+    else
+        $('#up').fadeIn();
+    if (mtop*px + co.offset().top + co.height() - 8.25*px < 10)
+        $('#down').fadeOut();
+    else
+        $('#down').fadeIn();
+}
 
+function scrollPage(doUp) {
+    var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
     co.css('margin-top', mtop + (doUp ? -8.25 : 8.25) + 'em');
-
-    $('#down').toggleClass('ghosted', mtop == -1);
-    $('#up').toggleClass('ghosted', (fi.offset().top + fi.height()) < (co.offset().top + co.height() - 8.25*px));
+    refreshScroll();
 }
 
 function playSearch(target, query) {
     var id = target.data('id');
     switch(target.find('.type').text()) {
         case 'song': 
-            var artistSong = target.find('.name').html().split('<br>');
+            var songArtist = target.find('.name').html().split('<br>');
             albumToUrl(target.find('.image').attr('style').slice(22, -1), function(dataStr) {
-                $.ajax(base + '/stream/' + artistSong[0] + '/' + artistSong[1] + '/metadata').done(function(len) {
+                var getMetadata = function(len) {
                     colorGen([{
                         id:         target.data('id'),
-                        songName:   artistSong[1],
-                        artistName: artistSong[0],
+                        songName:   songArtist[0],
+                        artistName: songArtist[1],
                         albumName:  target.data('album'),
                         albumUrl:   dataStr,
-                        len: parseFloat(len)
+                        len: len && parseFloat(len)
                     }], function(searchRes) {
                         playSong(searchRes, 'next');
                     });
+                };
+                if (audioWorkaround) {
+                    $.ajax(
+                        base + '/stream/' +
+                        encodeForURI(songArtist[1]) + '/' +
+                        encodeForURI(songArtist[0]) + '/metadata'
+                    ).done(getMetadata);
+                } else getMetadata();
+            });
+        break;
+        case 'album':
+            var albumArtist = target.find('.name').html().split('<br>');
+            albumToUrl(target.find('.image').attr('style').slice(22, -1), function(dataStr) {
+                colorGen([{
+                    songName:   albumArtist[1],
+                    artistName: albumArtist[0],
+                    albumUrl:   dataStr
+                }], function(searchRes) {
+                    var baseData = {
+                        albumUrl: searchRes.albumUrl,
+                        color: searchRes.color,
+                        albumName: albumArtist[1],
+                    };
+                    var songsInAlbum = [];
+                    var procNextSong = function(songs) {
+                        if (!songs.length) return playSong(songsInAlbum, 'next');
+                        var songInAlbum = songs[0];
+                        var realSong = $.extend({}, baseData, songInAlbum);
+                        if (audioWorkaround) {
+                            $.ajax(
+                                base + '/stream/' +
+                                encodeForURI(songInAlbum.artistName) + '/' +
+                                encodeForURI(songInAlbum.songName) + '/metadata'
+                            ).done(function(len) {
+                                realSong.len = parseFloat(len);
+                                if (realSong.len) songsInAlbum.push(realSong);
+                                procNextSong(songs.slice(1));
+                            });
+                        } else {
+                            songsInAlbum.push(realSong);
+                            procNextSong(songs.slice(1));
+                        }
+                    }
+                    var albumId;
+                    if (id)
+                        albumId = id;
+                    else
+                        albumId = encodeForURI(albumArtist[0]) + '/' + encodeForURI(albumArtist[1]);
+                    $.ajax({
+                        url: base + '/album/' + albumId,
+                        dataType: 'json'
+                    }).done(procNextSong);
                 });
             });
         break;

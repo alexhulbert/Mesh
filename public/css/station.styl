@@ -44,7 +44,6 @@
   min-width 11em
   max-width 18em
   position relative
-  top 0.15em
   height 4em
   margin 0.75em
   border none
@@ -79,10 +78,11 @@
     text-overflow ellipsis
     max-width 17em
     padding-right 1em
+  top 0.15em
   &:hover
     top 0
   &:active
-    top 0.35em
+      top 0.35em
 #bubble
   z-index 10
   opacity 0
@@ -176,6 +176,20 @@ body
       border-color #000
       &:after
         background #000
+        
+.arrow
+  min-width 2em
+  font-size 3em
+  height 2em
+  text-align center
+  line-height 2em
+  right 3%
+  position absolute
+
+  &#down
+    margin-top 80vh
+  &#up
+    margin-top 55vh
 
 .fancyInput
   vendor(transition, all 350ms)

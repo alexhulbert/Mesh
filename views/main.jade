@@ -68,6 +68,8 @@ block content
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style="margin-top: -1em")
+      #down.arrow.card(onclick="scrollPage(1)", style="display: none") &#9660;
+      #up.arrow.card(onclick="scrollPage(0)", style="display: none")   &#9650;
     section#answer
       span#cancel.clickable &#10005;
       .fancyInput

@@ -88,7 +88,11 @@ var showLike = [
 //var report = window.onerror;
 //window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));};
 
-var onNoSong = $.throttle(20000, false, function(e) {
+var maxErrors = 20;
+var curErrors = 0;
+
+var onNoSong = /*$.throttle(500, false,*/ function(e) {
+    if (++curErrors >= maxErrors) return;
     var ecode = 0;
     if (e.currentTarget)
         ecode = e.currentTarget.error.code;
@@ -96,14 +100,32 @@ var onNoSong = $.throttle(20000, false, function(e) {
         ecode = e.path[0].error.code;
     if (ecode == 4) {
         console.log("ERROR LOADING SONG!", e);
-        var badSong = $('.song.current');
-        mesh(songs.length, 3, function() {
-            curSong--;
-            songs.splice(-2, 1);
-            badSong.remove();
-        });
+        var preloading = !!music().audio.currentTime;
+        //Remove Song current song if no Preload, remove next song if preload
+        if (!preloading || curSong != songs.length - 1) {
+            $('.song').filter(function() {
+                return $('> div', this).attr('data-index') == (curSong + preloading);
+            }).remove();
+        }
+        songs.splice(curSong + preloading, 1);
+        //Now curSong is next/correct song
+        
+        //Shift index of each song to match songs[]
+        $('#song .container > div > div')
+            .each(function() {
+                var e = $(this);
+                if (parseInt(e.attr('data-index')) > curSong) {
+                    var newIndex = parseInt(e.attr('data-index')) - 1;
+                    e.attr('data-index', newIndex);
+                    var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
+                    e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
+                }
+            })
+        ;
+        
+        if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
     }
-});
+};
 
 function encodeForURI(input) {
     return encodeURIComponent(input)
@@ -253,34 +275,42 @@ function next() {
     mesh(curSong + 1, 3);
 }
 
-function playSong(data, type) {
+function playSong(data, type, cb) {
     var funct;
     switch(type) {
         case 'last':
             funct = function(d) {
                 songs.push(d);
                 updateHistory('add', songs.length - 1);
+                if (cb) cb();
             };
         break;
         case 'next':
             funct = function(d) {
                 songs.splice(curSong + 1, 0, d);
                 updateHistory('add', curSong + 1);
+                if (cb) cb();
             };
         break;
         default:
             funct = function(d) {
                 nextData = d;
                 load(d);
-                mesh(songs.length, 2);
+                mesh(songs.length, 2, cb);
             };
         break;
     }
     
     if (typeof data === "string") {
-        $.ajax(base + '/grab/song/' + id + (audioWorkaround ? '/legacy' : '')).done(function(dataStr) {
+        $.ajax(base + '/grab/song/' + data + (audioWorkaround ? '/legacy' : '')).done(function(dataStr) {
             funct(JSON.parse(dataStr));
         });
+    } else if (data instanceof Array) {
+        if (data.length) {
+            playSong(data[data.length - 1], type, function() {
+                playSong(data.slice(0, -1), type, cb);
+            });
+        } else if (cb) cb();
     } else funct(data);
 }
 
@@ -310,6 +340,7 @@ function mesh(ind, part, callback) {
             curSong = ind;
             updateHistory('add', songs.length - 1);
             updateUI(nextData);
+            nextData = undefined;
             playQueue();
             cb();
         }
@@ -365,8 +396,19 @@ function updateHistory(action, param) {
         case 'add':
             var data = songs[param];
             if (!data) return;
+            $('#song .container > div > div')
+                .each(function() {
+                    var e = $(this);
+                    if (parseInt(e.attr('data-index')) >= parseInt(param)) {
+                        var newIndex = parseInt(e.attr('data-index')) + 1;
+                        e.attr('data-index', newIndex);
+                        var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
+                        e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
+                    }
+                })
+            ;
             $('#song .container > div:eq(-' + (param + 1) + ')').after(
-                '<div class="song"><div onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div><span><span>"{0}"<br>{1}<br>{2}</span></span></div>'.format(
+                '<div class="song"><div data-index="{4}" onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div><span><span>"{0}"<br>{1}<br>{2}</span></span></div>'.format(
                     data.songName,
                     data.artistName,
                     data.albumName === null ? '(No Album)' : data.albumName,
@@ -632,7 +674,7 @@ function timeUpdate() {
         inQueue = true;
     }
 
-    if (total - elapsed < 0.25 && inQueue) {
+    if ((total - elapsed < 0.25 || music().audio.ended) && inQueue) {
         inQueue = false;
         mesh(curSong + 1, 2);
     }

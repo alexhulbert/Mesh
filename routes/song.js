@@ -11,8 +11,10 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
-var localMax  = 16; //TODO: ADD TO OPTION SECTION
-var globalMax = 1024;
+var localMax  = 24;
+var globalMax = 200;
+//localMax + globalMax < 225
+//Takes  up localMax*#ofstations + globalMax
 
 function translate(req, res, next) {
     if (typeof req.params.fileName !== 'undefined' && req.params.fileName.slice(-1 * (req.params.type.length + 1)) == '.' + req.params.type)
@@ -77,6 +79,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                     req.user.recent.slice(0, (globalMax-1)*16)
                 ;
                 req.user.markModified('stations');
+                req.user.markModified('recent');
                 req.user.save(function() {
                     data[0].id = jrs.id;
                     data[1].id = jrl.id;

@@ -41,7 +41,6 @@ GLOBAL.stream = function(req, res) {
                             });
                         });
                     } else {
-                        console.log('!> Metadata for non-existing song');
                         res.end("0");
                     }
                 });
