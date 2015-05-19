@@ -1,6 +1,13 @@
 var mongoose = require('mongoose');
 var bcrypt = require('bcrypt-nodejs');
 
+var filter = mongoose.Schema({
+    index: String,
+    type: String,
+    key: String,
+    value: String
+});
+
 var station = mongoose.Schema({
     playlist: String,
     prettyName: String,
@@ -11,8 +18,9 @@ var station = mongoose.Schema({
     timestamp: String,
     bootstrapped: false,
     image: String,
-    filters: {type: mongoose.Schema.Types.Mixed, default: {}},
-    recentlyPlayed: String
+    filters: [filter],
+    recentlyPlayed: String,
+    lastUpdated: String
 });
 
 var userSchema = mongoose.Schema({
@@ -28,7 +36,9 @@ var userSchema = mongoose.Schema({
     verifyToken: String,
     elevated: false,
     order: [String],
-    recent: String
+    recent: String,
+    bookmarks: String,
+    uuid: String
 });
 
 userSchema.pre('save', function(next) {

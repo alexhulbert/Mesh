@@ -1,8 +1,18 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="9px" height="9px" viewBox="0 0 9 9" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <g stroke="none" stroke-width="1" fill="none">
-        <g transform="translate(-972, -459)" fill="#FFFFFF">
-            <path d="M972,468 L981,468 L981,459 L972,459 L972,468 Z M972,461 L981,461 L979,459 L979,468 L981,466 L972,466 L974,468 L974,459 L972,461 Z"></path>
-        </g>
-    </g>
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" version="1.1">
+  <style>
+	rect,path {
+		fill:none;
+		stroke-linecap:round;
+		stroke-linejoin:round;
+		stroke-width:2.5;
+		stroke:#000;
+	}
+  </style>
+  <g transform="translate(0,-952.36216)">
+    <rect width="30" height="30" x="9.75" y="987.61218" class="fillMe"/>
+    <path d="m50.01385 987.48704 40.2223 0"/>
+    <path d="m50.018531 997.48703 40.212938 0M50.018531 1007.487l40.212938 0M50.018167 1017.487l40.212938 0"/>
+    <path d="m9.9821339 1027.5222 80.1050631 0M9.9821339 1037.5222l80.1050631 0"/>
+    <path d="m10.017256 977.48703 79.965488 0M10.017256 967.48703l79.965488 0"/>
+  </g>
 </svg>

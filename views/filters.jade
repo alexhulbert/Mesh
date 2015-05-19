@@ -1,0 +1,85 @@
+#filterView.view
+  #backminus.minus.clickable
+  h2#filterTitle Please Choose a Filter to Apply
+  #stationList
+  #manage
+  #types
+    .filterChoice(data-page='general')
+      h3 Filter what kind of music is played
+      p Modify how loud, acoustic, etc. the songs in your station are
+    .filterChoice(data-page='song')
+      h3 Make Music More or Less Like a Song
+      p Choose a specific song and use it to influence your station
+    .filterChoice(data-page='tertiary')
+      h3 Only Play Certain Types of Music
+      p Limit your music to types of music such as christmas, childrens, or studio
+    .filterChoice(data-page='time')
+      h3 Limit When the Music was Created
+      p Filter the birth/death date of artists or when their songs were created
+    .filterChoice(data-page='place')
+      h3 Limit Where the Music is From
+      p Choose a specific region to restrict the music to
+    .filterChoice(data-page='structure')
+      h3 Filter the Musical Structure of the Music
+      p Only play music with a predefined key, tempo, or mode (major/minor)
+    .filterChoice(data-page='style')
+      h3 Listen to Music Influenced by a Genre
+      p Make the music you hear more or less like a specific genre
+    .filterChoice(data-page='mood')
+      h3 Alter the Mood of Your Station
+      p Use adjectives to describe the type of music you'd prefer
+    .filterChoice(data-page='length')
+      h3 Restrict the length of music
+      p Define a range that all songs' lengths must fall in
+    .filterChoice(data-page='freeform')
+      h3 Freely enter keywords to steer station (beta)
+      p Warning: This filter can cause stations to operate unstably
+  .subview.nl-form(data-page='general')
+    .formarea
+      | I want my music to be&nbsp;
+      select.filterVal
+        option(value='++') much more
+        option(value='+' selected) more
+        option(value='-' ) less
+        option(value='--') much less
+      | &nbsp;
+      input.filterKey(type='text', placeholder='acoustic', data-subline='Think of a subline')
+    .nl-overlay
+  .subview.nl-form(data-page='tertiary')
+    .formarea
+      | I&nbsp;
+      select.filterVal
+        option(value='Y') mostly
+        option(value='M', selected='') sometimes
+        option(value='N') never
+      | &nbsp;want to hear&nbsp;
+      select.filterKey
+        option(value='live', selected='') live
+        option(value='christmas') christmas
+        option(value='acoustic') acoustic
+        option(value='electric') electric
+        option(value='studio') studio
+        option(value='childrens') childrens'
+        option(value='instrumental') instrumental
+        option(value='vocal') vocal
+      | &nbsp;music 
+    .nl-overlay
+  .subview.nl-form(data-page='tempo')
+    .formarea
+      | I want my music to be between&nbsp;
+      input(type='text', placeholder='0', data-subline='Must be between 0 and 300')
+      | &nbsp;and&nbsp;
+      input(type='text', placeholder='300', data-subline='Must be between 0 and 300')
+      | &nbsp; BPM
+    .nl-overlay
+  .subview.nl-form(data-page='style')
+    .formarea
+      | I want&nbsp;
+      select.filterVal
+        option(value="+") more
+        option(value="-") less
+      | &nbsp;music with roots in&nbsp;
+      input(type='text', placeholder='Acid Jazz', data-subline='Full list of genres available <a><u>here</u></a>')
+    .nl-overlay
+  .circledButton.left  &#xe600;
+  .circledButton.right &#xe601;

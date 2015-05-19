@@ -10,6 +10,7 @@ var session = require('express-session');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var flash = require('connect-flash');
+var MongoStore = require('connect-mongo')(session);
 
 var app = express();
 app.use(favicon('./public/img/mesh.ico'));
@@ -35,14 +36,17 @@ mongoose.connect(process.env.DB_URL);
 app.use(session({
     secret: process.env.SESSION_SECRET,
     saveUninitialized: true,
-    resave: true
+    resave: true,
+    store: new MongoStore({
+        mongooseConnection: mongoose.connection
+    })
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(flash());
 require('./user/auth')(passport);
 GLOBAL.db = db;
-
 fs.readdirSync('./routes').forEach(function(route) {
     app.use(require('./routes/' + route.slice(0, -3)));
 });
@@ -52,16 +56,6 @@ app.use(function(req, res, next) {
     err.status = 404;
     next(err);
 });
-
-if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-        res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err
-        });
-    });
-}
 
 app.use(function(err, req, res, next) {
     res.status(err.status || 500);

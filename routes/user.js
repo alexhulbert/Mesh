@@ -2,6 +2,7 @@ var express = require('express');
 var passport = require('passport');
 var router = express.Router();
 var blacklist = ["squeezeboxId", "resetPasswordToken", "resetPasswordExpires", "password", "verifyToken"];
+var crypto = require('crypto');
 
 //Test Status
 
@@ -76,5 +77,18 @@ router.get('/user/reset/:token', passport.getReset);
 
 router.get('/user/verify/:token', passport.verify);
 router.get('/user/resend/:email', passport.resend);
+
+//Get Unique Token For Hue
+
+router.get('/user/huesername', require("../user/isAuthenticated"), function(req, res) {
+    if (req.user.uuid) return res.end(req.user.uuid);
+    crypto.randomBytes(16, function(err, buf) {
+        var uuid = buf.toString('hex');
+        req.user.uuid = uuid;
+        req.user.save(function() {
+            res.end(uuid);
+        });
+    });
+});
 
 module.exports = router;

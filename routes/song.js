@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var async = require('async');
 var request = require('request').defaults({ encoding: null });
+var moment = require('moment');
 var LastFmNode = require('lastfm').LastFmNode;
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
@@ -11,8 +12,8 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
-var localMax  = 24;
-var globalMax = 200;
+var localMax  = 64;
+var globalMax = 160;
 //localMax + globalMax < 225
 //Takes  up localMax*#ofstations + globalMax
 
@@ -44,8 +45,6 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
     };
     
     var profStat = function(next) {
-        if (req.params.sid >= req.user.stations.length)
-            return res.status(400).end('Station index out of range.');
         var stationId = req.user.stations[req.params.sid].playlist;
         if (typeof stationId === 'undefined') {
             //TODO: Fix stationId definition control. This error may not need coverage
@@ -74,6 +73,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                     jrs.id.slice(2) +
                     req.user.stations[req.params.sid].recentlyPlayed.slice(0, (localMax-1)*16)
                 ;
+                req.user.stations[req.params.sid].lastUpdated = moment().format('x');
                 req.user.recent =
                     jrs.id.slice(2) +
                     req.user.recent.slice(0, (globalMax-1)*16)

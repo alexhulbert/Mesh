@@ -1,0 +1,17 @@
+<svg xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100" version="1.1">
+    <style>
+        path {
+        	fill: none;
+        	stroke-linecap: round;
+        	stroke-width: 2.5;
+        	stroke: #000;
+        }
+    </style>
+    <g transform="translate(0,-952.36214)">
+        <path d="M52.5 1000 15 1037.5"/>
+        <path d="M93.75 982.5A23.75 23.75 0 0 1 70 1006.25 23.75 23.75 0 0 1 46.25 982.5 23.75 23.75 0 0 1 70 958.5 23.75 23.75 0 0 1 93.75 982.5Z"/>
+        <path d="m51.25 982.5c0-10.5 8.5-19 19-19"/>
+        <path d="m70 992.5 0-20 10 0M70 992.5 70 992.5 70 992.5"/>
+        <path d="m70 992.5a5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5z"/>
+    </g>
+</svg>

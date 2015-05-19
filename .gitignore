@@ -5,3 +5,4 @@
 /data
 /buildoptions.env
 /routes/migrate.js
+!/public/css/lib/vex*

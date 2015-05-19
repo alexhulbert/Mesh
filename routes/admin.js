@@ -7,14 +7,25 @@ var requireAdmin = function(req, res, next) {
 };
 
 router.get('/admin/key/:key/:uses?/:expires?', require('../user/isAuthenticated'), requireAdmin, function(req, res) {
-    var betaKey = new Model.keys();
-    betaKey.key      = req.params.key;
-    betaKey.usesLeft = req.params.usesLeft || -1;
-    betaKey.expires  = req.params.expires || null;
-    betaKey.save(function(err) {
-        //Cast string to inverted boolean, then to int, then back to string
-        res.end(+!err+'');
-    });
+    Model.keys.findOne({ key: req.params.key }, function(err, key) {
+        if (key) {
+            key.usesLeft = req.params.uses || key.usesLeft;
+            key.expires  = req.params.expires || null;
+            betaKey.save(function(err) {
+                //Cast string to inverted boolean, then to int, then back to string
+                res.end(+!err+'');
+            });
+        } else {
+            var betaKey = new Model.keys();
+            betaKey.key      = req.params.key;
+            betaKey.usesLeft = req.params.uses || -1;
+            betaKey.expires  = req.params.expires || null;
+            betaKey.save(function(err) {
+                //Cast string to inverted boolean, then to int, then back to string
+                res.end(+!err+'');
+            });
+        }
+    })
 });
 
 router.get('/admin/unkey/:key', require('../user/isAuthenticated'), requireAdmin, function(req, res) {

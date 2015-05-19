@@ -1,6 +1,13 @@
 var color = [0, "0%", 0]; //Changes according to album
 var isRunning = false;
-var musicPlayer = [{}, {}];
+var musicPlayer = [
+    {audio: new Audio('')},
+    {audio: new Audio('')}
+];
+var hue;
+var usingHue = false;
+var intervalStep = 0;
+var loadingInterval = false;
 var bkg;
 var light = true;
 var curStation = null;
@@ -23,64 +30,72 @@ var theme;
 var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = location.href.slice(0, -5);
 var globalOverhead = 0;
-var audioWorkaround = !!navigator.userAgent.match(/(iPhone)|(AppleCore)|(iTunes)|(undefined)|(chrome)/gi);
+var audioWorkaround = !!navigator.userAgent.match(/iPhone|AppleCore|iTunes|undefined|chrome/gi);
 var colorThief = new ColorThief();
+var ear = {};
 var locked = false;
+var donePreloading = false;
 var likeStatus = {
     NEUTRAL: 0,
     LIKE: 1,
     DISLIKE: 2
 };
-var likeBtn, dislikeBtn, unlikeBtn, undislikeBtn;
+vex.defaultOptions.className = 'vex-theme-flat-attack';
+$.fn.extend({
+    in: function() {
+        $(this)
+            .show(0)
+            .animate({opacity: 1}, 350)
+        ;
+    },
+    out: function() {
+        $(this)
+            .animate({opacity: 0}, 350)
+            .delay(350)
+            .hide(0)
+        ;
+    }
+})
+
+function strokeAndFill(selector, color) {
+    var e = $('g > :not(g)', selector);
+    e.each(function() {
+        var el = $(this);
+        var fillClr = el.css('fill');
+        if (fillClr != 'none' && fillClr != 'transparent' && fillClr.slice(0, 4) != 'rgba')
+            el.css('fill', color);
+    });
+    e.css('stroke', color);
+}
+
+function feedbackFill(like, fill) {
+    var parentObj = like ? $('#like') : $('#dislike');
+    var svgFill = parentObj.contents().find('path');
+    svgFill.css({
+        fill: fill ? svgFill.first().css('stroke') : 'transparent'
+    });
+    var feedbackStr = 'feedback("';
+    if (fill)  feedbackStr += 'un';
+    if (!like) feedbackStr += 'dis';
+    feedbackStr += 'like")';
+    parentObj.attr('onclick', feedbackStr);
+}
 
 var showLike = [
     function(song, cb) { //NEUTRAL
-        unlikeBtn.fadeTo(400, 0, function() {
-            unlikeBtn.addClass('hidden');
-        });
-        likeBtn.removeClass('hidden').fadeTo(400, 1, function() {
-            if (song) {
-                song.likeStatus = likeStatus.NEUTRAL;
-                if (cb) locked = false; else unlock();
-            }
-            if (cb) cb();
-        });
-        dislikeBtn.removeClass('hidden').fadeTo(400, 1);
-        undislikeBtn.fadeTo(400, 0, function() {
-            undislikeBtn.addClass('hidden');
-        });
+        if (song) song.likeStatus = likeStatus.NEUTRAL;
+        feedbackFill(true , false);
+        feedbackFill(false, false);
     },
     function(song, cb) { //LIKE
-        likeBtn.fadeTo(400, 0, function() {
-            likeBtn.addClass('hidden');
-        });
-        unlikeBtn.removeClass('hidden').fadeTo(400, 1, function() {
-            if (song) {
-                song.likeStatus = likeStatus.LIKE;
-                if (cb) locked = false; else unlock();
-            }
-            if (cb) cb();
-        });
-        dislikeBtn.removeClass('hidden').fadeTo(400, 1);
-        undislikeBtn.fadeTo(400, 0, function() {
-            undislikeBtn.addClass('hidden');
-        });
+        if (song) song.likeStatus = likeStatus.LIKE;
+        feedbackFill(true , true );
+        feedbackFill(false, false);
     },
     function(song, cb) { //DISLIKE
-        unlikeBtn.fadeTo(400, 0, function() {
-            unlikeBtn.addClass('hidden');
-        });
-        likeBtn.removeClass('hidden').fadeTo(400, 1, function() {
-            if (song) {
-                song.likeStatus = likeStatus.DISLIKE;
-                if (cb) locked = false; else unlock();
-            }
-            if (cb) cb();
-        });
-        undislikeBtn.removeClass('hidden').fadeTo(400, 1);
-        dislikeBtn.fadeTo(400, 0, function() {
-            dislikeBtn.addClass('hidden');
-        });
+        if (song) song.likeStatus = likeStatus.DISLIKE;
+        feedbackFill(true , false);
+        feedbackFill(false, true );
     }
 ];
 
@@ -124,7 +139,7 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         ;
         
         if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
-    }
+    } else console.log("UNHANDLED SONG ERROR!", e);
 };
 
 function encodeForURI(input) {
@@ -143,10 +158,17 @@ function devTest(str) {
 }
 
 function lock() {
+    $('#lockOverlay').css('opacity', 1);
+    if (!loadingInterval) loadingInterval = loadAnimate(1000, 3);
     locked = true;
 }
 
 function unlock() {
+    $('#lockOverlay').css('opacity', 0);
+    if (loadingInterval) {
+        clearInterval(loadingInterval);
+        loadingInterval = false;
+    }
     locked = false;
 }
 
@@ -369,7 +391,7 @@ function deleteStation(id, event) {
     lock();
     if (id === 0 && $('.station').length == 2) return; //Don't delete last station
     if (event) event.stopPropagation();
-    if (curStation == id) pause(); //lock?
+    if (curStation == id) pause();
     $.ajax(base + '/station/delete/' + id).done(function(resp) {
         updateHistory('remove', id);
         refreshStations();
@@ -385,13 +407,17 @@ function deleteStation(id, event) {
 function updateHistory(action, param) {
     switch(action) {
         case 'remove':
-            $('#stat .container > [data-id="' + param + '"]').remove();
-            $('#stat .container > :not(.add)').each(function(elem) {
+            $('.circleCard[data-id="' + param + '"], #stat .container > [data-id="' + param + '"]').remove();
+            $('.circleCard, #stat .container > :not(.add)').each(function(elem) {
                 var e = $(elem);
                 if (parseInt(e.data('id')) > parseInt(param)) {
                     e.data('id', parseInt(e.data('id')) - 1);
                 }
             });
+            for (var s in songs) {
+                var song = songs[s];
+                if (song.station > parseInt(param)) song.station--;
+            }
         break;
         case 'add':
             var data = songs[param];
@@ -424,8 +450,8 @@ function updateHistory(action, param) {
     }
 }
 
-function updateUI(data) {
-    updateHistory('set', curSong);
+function updateUI(data, onlyColor) {
+    if (!onlyColor) updateHistory('set', curSong);
     var fill, hoverFill, pressFill;
     color = data.color;
     if (color[0] === null) color[0] = 0;
@@ -442,37 +468,36 @@ function updateUI(data) {
         hoverFill = "#666";
         pressFill = "#000";
     }
-    showLike[data.likeStatus || 0]();
     var icons = $('.icon').contents();
     for (var i = 0; i < icons.length; i++) {
-        var icon = $('g g,path', icons[i]);
         $('svg', icons[i]).css('cursor', 'pointer');
-        icon.attr('fill', fill);
+        strokeAndFill(icons[i], fill);
     }
     $('.icon.clickable')
         .mouseover(function(self) {
             var context = $(self.target).contents().addBack();
-            $('g g,path', context).attr('fill', hoverFill);
+            strokeAndFill(context, hoverFill);
         })
         .mouseout(function(self) {
             var context = $(self.target).contents().addBack();
-            $('g g,path', context).attr('fill',  fill);
+            strokeAndFill(context, fill);
         })
         .contents().find('svg').add('svg.icon.clickable')
             .mousedown(function(self) {
-                $('g g,path', self.target).attr('fill', pressFill);
+                strokeAndFill(self.target, pressFill);
             })
             .mouseup(function(self) {
-                $('g g,path', self.target).attr('fill', hoverFill);
+                strokeAndFill(self.target, hoverFill)
             })
     ;
-    $('#centerpiece').contents().find('g g,path').attr({
-        fill: data.dark ? '#444' : '#D8D8D8'
-    });
-    if (data.albumUrl === null) {
-        $('#album').css('background-image', 'none');
-    } else {
-        $('#album').css('background-image', 'url("' + data.albumUrl + '")');
+    $('#centerpiece').contents().find('g, g > *').css('fill', data.dark ? '#444' : '#D8D8D8');
+    if (!onlyColor) {
+        if (data.albumUrl === null) {
+            $('#album').css('background-image', 'none');
+        } else {
+            $('#album').css('background-image', 'url("' + data.albumUrl + '")');
+        }
+        showLike[data.likeStatus || 0]();
     }
     theme.draw($.extend(data, {color:color}));
 }
@@ -510,19 +535,20 @@ function newSong(cb, skip) {
 }
 
 function load(data) {
+    var nxtPlayer = musicPlayer[+!mIndex];
     var srcUrl = base + '/stream/' + encodeForURI(data.artistName) + '/' + encodeForURI(data.songName);
     if (data.len) {
-        musicPlayer[+!mIndex].duration = function() {
+        nxtPlayer.duration = function() {
             return data.len;
         };
     } else {
-        musicPlayer[+!mIndex].duration = function() {
+        nxtPlayer.duration = function() {
             return this.audio.duration || Infinity;
         };
     }
-    musicPlayer[+!mIndex].audio.addEventListener('error', onNoSong);
-    musicPlayer[+!mIndex].audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
-    musicPlayer[+!mIndex].audio.load();
+    nxtPlayer.audio.addEventListener('error', onNoSong);
+    nxtPlayer.audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
+    nxtPlayer.audio.load();
 }
 
 var feedback = $.debounce(5000, true, function(opinion, songIndex) {
@@ -531,27 +557,27 @@ var feedback = $.debounce(5000, true, function(opinion, songIndex) {
     $.ajax(
         base + '/feedback/' + (sng.station || curStation) + '/' + opinion + '/' + sng.id
     ).done(function() {
+        var status = null;
         switch(opinion) {
             case 'dislike':
-                showLike[likeStatus.DISLIKE](sng, next);
+                status = likeStatus.DISLIKE;
             break;
             case 'undislike':
-                showLike[likeStatus.NEUTRAL](sng);
+                status = likeStatus.NEUTRAL;
             break;
             case 'like':
-                showLike[likeStatus.LIKE](sng);
+                status = likeStatus.LIKE;
             break;
             case 'unlike':
-                showLike[likeStatus.NEUTRAL]();
-            break;
-            default:
-                unlock();
+                status = likeStatus.NEUTRAL;
             break;
         }
+        if (status !== null) showLike[status](sng);
+        if (status == likeStatus.DISLIKE) next(); else unlock();
     });
 });
 
-$(document).mousemove(function(e) {
+$(document).mousemove($.throttle(25, function(e) {
 	if (!sidebar) return;
     var side = $('#' + (sidebar == 1 ? 'stat' : 'song'));
     mx = e.pageX;
@@ -609,7 +635,7 @@ $(document).mousemove(function(e) {
 			clearInterval(intervalDown);
 		}
 	}
-});
+}));
 
 function play() {
     $('#pause').removeClass('hidden');
@@ -637,29 +663,48 @@ function appendStation(station) {
         .attr('data-id', station.id)
         .insertAfter('#stat .container > .station:first')
     ;
+    var card = $('<div class="circleCard">')
+        .css('background-image', 'url(' + station.image + ')')
+        .data('id', station.id)
+        .attr('data-id', station.id)
+        .attr('title', station.name)
+        .attr('onclick', 'filterStation(' + station.id + ');')
+        .prependTo('#stationList')
+    ;
     refreshStations();
-    return elem;
+    return elem.add(card);
+}
+
+function initWithStation(index) {
+    $('.station[data-id=' + index  + ']').addClass('current');
+    loadStation(index, function() {
+        mIndex = +!mIndex;
+        newSong(function(data) {
+            load(data);
+            songs.push(data);
+            updateHistory('add', 0);
+            updateUI(data);
+            $('#loading').fadeOut(350, playQueue);
+        });
+    });
 }
 
 function getStations() {
-    $.ajax(base + '/stations').done(function(res){
+    $.ajax(base + '/stations').done(function(res) {
         var data = JSON.parse(res);
-        for (var i in data.stations) {
-            var station = data.stations[i];
-            appendStation(station);
-        }
-
-        $('.station[data-id=' + data.lastStation  + ']').addClass('current');
-        loadStation(data.lastStation, function() {
-            mIndex = +!mIndex;
-            newSong(function(data) {
-                load(data);
-                songs.push(data);
-                updateHistory('add', 0);
-                updateUI(data);
-                $('#loading').fadeOut(350, playQueue);
+        if (data.stations.length) {
+            for (var i in data.stations) {
+                var station = data.stations[i];
+                appendStation(station);
+            }
+            initWithStation(data.lastStation);
+        } else {
+            showSearch('firstStation');
+            $('#loading').css('z-index', 2);
+            colorGen([{}], function(data) {
+                updateUI(data, true);
             });
-        });
+        }
     });
 }
 
@@ -670,13 +715,23 @@ function timeUpdate() {
     if (pb) progBar.val(elapsed/total);
 
     if (total - elapsed < 15 && total - elapsed > 0.1 && !inQueue) {
-        mesh(curSong + 1, 1);
+        mesh(curSong + 1, 1, function() {
+            if (inQueue) {
+                donePreloading = true;
+            } else {
+                donePreloading = false;
+                mesh(curSong + 1, 2);
+            }
+        });
         inQueue = true;
     }
 
     if ((total - elapsed < 0.25 || music().audio.ended) && inQueue) {
         inQueue = false;
-        mesh(curSong + 1, 2);
+        if (donePreloading) {
+            mesh(curSong + 1, 2);
+            donePreloading = false;
+        }
     }
 }
 
@@ -698,49 +753,41 @@ function squeezebox(username, password, ip, port) {
 }
 
 function init() {
+    ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
+    ear.analyser = ear.context.createAnalyser(),
+    ear.frequencies = new Uint8Array(ear.analyser.frequencyBinCount);
     for (var i in musicPlayer) {
         var mp = musicPlayer[i];
-        mp.ctx = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext();
-        mp.audio = new Audio('');
-        mp.audioSrc = mp.ctx.createMediaElementSource(mp.audio);
-        mp.analyser = mp.ctx.createAnalyser();
-        mp.audioSrc.connect(mp.analyser);
-        mp.analyser.connect(mp.ctx.destination);
-        mp.frequencyData = new Uint8Array(mp.analyser.frequencyBinCount);
         mp.audio.addEventListener('timeupdate', timeUpdate);
+        mp.audioSrc = ear.context.createMediaElementSource(mp.audio);
+        mp.audioSrc.connect(ear.analyser);
     }
+    ear.analyser.connect(ear.context.destination);
     theme.tick();
     getStations();
 
     con = $('#stat .container');
     con.click($.debounce(5000, true, function(e) {
-        lock();
         var target = $(e.target).closest('.station');
         if (target.length && !target.hasClass('add')) {
+            lock();
             loadStation(target[0].dataset.id);
         }
     }));
-
-
-    /*$("#feedbackBtn")
-        .attr('href', options.star ? '#rating' : '#feedback')
-        .wheelmenu({
-            trigger: "hover",
-            animation: "fly",
-            animationSpeed: "fast",
-            angle: [30, 60]
-        })
-    ;*/
 
     $('#stations').sidr({
         side: 'left',
         name: 'stat',
         onOpen: function() {
             sidebar = 1;
+            var fillElem = $('#stations').contents().find('.fillMe');
+            fillElem.css('fill', fillElem.css('stroke'));
             theme.sidebar(sidebar);
         },
         onClose: function() {
             sidebar = 0;
+            var fillElem = $('#stations').contents().find('.fillMe');
+            fillElem.css('fill', 'transparent');
             theme.sidebar(sidebar);
         },
         body: '#player,#frost'
@@ -751,10 +798,14 @@ function init() {
         name: 'song',
         onOpen: function() {
             sidebar = 2;
+            var fillElem = $('#songs').contents().find('.fillMe');
+            fillElem.css('fill', fillElem.css('stroke'));
             theme.sidebar(sidebar);
         },
         onClose: function() {
             sidebar = 0;
+            var fillElem = $('#songs').contents().find('.fillMe');
+            fillElem.css('fill', 'transparent');
             theme.sidebar(sidebar);
         }
     });
@@ -767,15 +818,6 @@ function init() {
             max: 1
         }
     });
-    /*$('#volume').noUiSlider({
-        start: 0,
-        orientation: 'vertical',
-        connect: "lower",
-        range: {
-            min: 0,
-            max: 1
-        }
-    });*/
     
     progBar
         .on('slide', function() {
@@ -788,11 +830,50 @@ function init() {
             pb = true;
         })
     ;
+    
+    var hueIp = Cookies.get('hueip');
+    if (hueIp) initHue(hueIp);
     initSearch();
+    initFilters();
 };
 
+function initHue(ip, success, failure) {
+    Cookies.set('hueip', ip);
+    var successFunct = function() {
+        usingHue = true;
+        hue.initialize();
+        if (success) success();
+    };
+    $.ajax(base + '/user/huesername').done(function(uname) {
+        hue = new HueJS({
+            ipAddress: ip,
+            username: uname,
+            deviceType: 'Mesh'
+        });
+        hue.authenticate(successFunct, function(err) {
+            hue.authenticate(successFunct, function(suberr) {
+                usingHue = false;
+                if (failure) failure(err || suberr);
+            });
+        });
+    });
+}
+
+function loadAnimate(time, bubbles) {
+    intervalStep = 0;
+    var circles = $('#ellipsis').contents().find('circle');
+    circles.css('fill', 'transparent');
+    return setInterval(function() {
+        requestAnimationFrame(function() {
+            var elem = circles.eq(Math.floor(intervalStep));
+            elem.css('fill', (intervalStep % 1) ? 'transparent' :  elem.css('stroke'));
+            intervalStep += 0.5;
+            intervalStep %= bubbles;
+        });
+    }, time/bubbles);
+}
+
 $(window).load(function() {
-    var functSlice = typeof InstallTrigger !== 'undefined' ? 26 : 28;
     $('.icon.clickable').each(function() {
         $(this).contents()
             .on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
@@ -800,7 +881,11 @@ $(window).load(function() {
                     eval(event.view.frameElement.getAttribute('onclick'));
                 //I can't for the life of me find a better solution...
             }))
-            .find('g g,path').css('transition', 'fill 200ms')
+            .find('g, g > *').css({
+                'transition':         'fill 350ms, stroke 200ms',
+                '-moz-transition':    'fill 350ms, stroke 200ms',
+                '-webkit-transition': 'fill 350ms, stroke 200ms'
+            })
         ;
     });
     $('#song .container').slimScroll({
@@ -828,7 +913,7 @@ $(window).load(function() {
         railBorderRadius: '0',
         borderRadius: '0'
     });
-    $('#loadLogo').contents().find('g, path').css('fill', '#333');
+    $('#loadLogo').contents().find('g, g > *').css('fill', '#333');
     $('#songs').contents().find('svg')
         .on('touchstart click', function() {
             $.sidr((sidebar == 0) ? 'open' : 'close', 'song');
@@ -851,10 +936,6 @@ function domLoaded() {
     progBar = $('#progress');
     body = $('body');
     bkg = $('#background');
-    likeBtn = $('#like');
-    dislikeBtn = $('#dislike');
-    unlikeBtn = $('#unlike');
-    undislikeBtn = $('#undislike');
 }
 
 $(document).ready(function() {

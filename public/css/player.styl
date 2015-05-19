@@ -1,7 +1,5 @@
 @import('utils')
 
-clr = #7d1313
-
 @keyframes slideLeft
   to
     margin-left 3.25em
@@ -17,25 +15,33 @@ clr = #7d1313
 @keyframes fadeOut
   to
     opacity 0
-  
+
+.view,.subview
+  display none
+  opacity 0
+  z-index 3
+  pos(0, 0, left top, 100%, 100%)
+  vendor(transition, opacity 350ms)
+  position fixed
+  &.visible
+    opacity 1
 #player
   height 100%
-#album
-  pos(50, 50, middle center, 50vh, 50vh)
-  background-size cover
-  z-index 2
-#searchSong
+#searchSong,#filterBtn
   position absolute
   margin auto
-  left 2.5vw
   top calc(2.5vw + 1.5em)
-  width 3em
+  width 5em
   z-index 1
+#searchSong
+  left 2.5vw
+#filterBtn
+  right 2.5vw
 #stations
-  pos(2.5, 50, middle left, 3em, 3em)
+  pos(2.5, 50, middle left, 5em, 5em)
 #songs
-  pos(97.5, 50, middle right, 3em, 3em)
-  height 3em
+  pos(97.5, 50, middle right, 5em, 5em)
+  height 5em
 #loading
   z-index 3
   background-color #D8D8D8
@@ -57,15 +63,18 @@ clr = #7d1313
     pos(50, 75, middle center, auto, 0)
     font-size 3em
   #leftText
-    pos(25, 75, middle center, auto, 0)
+    pos(4, 98, left bottom, auto, auto)
+    left 4em
+    bottom 2em
   #rightText
-    pos(75, 75, middle center, auto, 0)
+    pos(96, 98, right bottom, auto, auto)
+    right 4em
+    bottom 2em
   .name
-    font-size 2.5em
+    font-size 2.0em
   .cap
-    font-size 2em
+    font-size 1.5em
 #background
-  background-image radial-gradient(circle closest-side, (clr + 35%) 0%, clr 95%)
   margin auto
   top 0
   bottom 0
@@ -77,21 +86,21 @@ clr = #7d1313
   pos(50, 75, middle top, 50vh, 7.5%)
   vendor(box-sizing, border-box)
 #next
-  pos(95, 50, right middle, 1.75em, 1.75em)
+  pos(95, 50, right middle, 2.25em, 2.25em)
 #back
-  pos(5, 50, left middle, 1.75em, 1.75em)
+  pos(5, 50, left middle, 2.25em, 2.25em)
 #dislike,#undislike
-  pos(30, 50, center middle, 1.75em, 1.75em)
+  pos(30, 50, center middle, 2.25em, 2.25em)
 #like,#unlike
-  pos(70, 50, center middle, 1.75em, 1.75em)
+  pos(70, 50, center middle, 2.25em, 2.25em)
 #download
   left   5vh
   top    5vh
-  width  1.75em
-  height 1.75em
+  width  2.25em
+  height 2.25em
   position absolute
 #play,#pause
-  pos(50, 50, center middle, 1.75em, 1.75em)
+  pos(50, 50, center middle, 2.25em, 2.25em)
 .hidden
   opacity 0
   z-index -1
@@ -123,11 +132,22 @@ clr = #7d1313
   font-size 1.25em
   vertical-align middle
   text-align center
-#noalbum
+.albumPos
   pos(50, 50, middle center, 50vh, 50vh)
+#album
+  background-size cover
+  z-index 2
+#noalbum
   z-index 0
+#lockOverlay
+  z-index 3
+  opacity 0
+  vendor(transition, 400ms opacity, 400ms background-color)
 #centerpiece
-  pos(50, 50, middle center, 40%, 40%)
+  pos(50, 50, middle center, 75%, 75%)
+#ellipsis
+  pos(50, 50, middle center, 85%, 85%)
+  pointer-events none
 #scUp
   pos(50, 0, middle top, 100%, 20%)
 #scDown
@@ -160,8 +180,8 @@ clr = #7d1313
   .container
     vendor(box-shadow, inset 1.1em 0 1.25em -1em #000)
 #feedbackBtn,#feedbackIcon
-  width  1.75em
-  height 1.75em
+  width  2.25em
+  height 2.25em
   right  5vh
   top    5vh
   position absolute
@@ -202,11 +222,14 @@ clr = #7d1313
     width 6.75em
     height 6.75em
     &:after
-      margin-top: 4vh
+      margin-top: 1.125em
+      padding-top: 1vh
       content "Add Station"
-    div:after
-      opacity 0
-  border-radius 100vw
+    div
+      font-size 3.75rem
+      &:after
+        opacity 0
+  border-radius 50%
   &.current
     margin-bottom 4.5em
     &:after
@@ -234,7 +257,7 @@ clr = #7d1313
         text-align center
         line-height 1em
         padding 0.16666em 0 0 0.16666em
-        content '\2715'
+        content '\e600'
     &.right
       margin-left 6em
   &:hover
@@ -245,13 +268,13 @@ clr = #7d1313
     background-size cover
     width 100%
     height 100%
-    border-radius 100vw
+    border-radius 50%
     &:after
       width 100%
       height 100%
       background-color #444
       opacity 0.4
-      border-radius 100vw
+      border-radius 50%
       content ''
       display block
   &.current > div:after
@@ -307,6 +330,7 @@ clr = #7d1313
       vendor(transition, opacity 350ms cubic-bezier(0.42, 1, 1, 1))
 
 #progress.bigHandle
+  vendor(box-shadow, 0 0 0.75em 0 #000)
   height 1.5em
   opacity 0.75
   margin-top 0
@@ -316,7 +340,7 @@ clr = #7d1313
   .noUi-handle
     width 1.5em
     height 1.5em
-    border-radius 100vw
+    border-radius 50%
     margin-left -0.75em
     &:before
       content ""
@@ -328,7 +352,7 @@ clr = #7d1313
       vendor(transform, rotate(45deg))
 
 body
-  font-family 'Geometria', 'Josefin Sans', 'Novecento Sans'
+  font-family 'icons', 'Geometria', 'Josefin Sans', 'Novecento Sans'
   letter-spacing -0.025em
   font-weight 300
   margin 0
@@ -336,11 +360,23 @@ body
   overflow hidden
   vendor(transition, color 400ms)
   &.light
+    .card,.circleCard
+      vendor(box-shadow, 0 0.2em rgba(0, 0, 0, 0.4))
+      background-color rgba(0, 0, 0, 0.25)
+      &:hover
+        vendor(box-shadow, 0 0.35em rgba(0, 0, 0, 0.4))
+      &:active
+        background-color rgba(0, 0, 0, 0.325)
+        vendor(box-shadow, 0 0em rgba(0, 0, 0, 0.4))
+    .minus
+      border-color #FFF
+      &::after
+        color #FFF
     .slimScrollBar
       background-color #FFF !important
     .slimScrollRail
       background-color #CCC !important
-    .station span
+    .station span,.circledButton
       &:hover
         color #999
       &:active
@@ -358,10 +394,11 @@ body
         background-color #000
     #noalbum
       background-color #D8D8D8
+    #lockOverlay
+      background-color rgba(0, 0, 0, 0.5)
     .station.current
       vendor(box-shadow, 0 0 0 0.15em #FFF)
     .station.add
-      background-image url('/img/icons/add_light.svg')
       vendor(box-shadow, 0 0 0 0.15em #FFF inset)
     .station:not(.add):not(.current) div,.song:not(.current) div::after
       box-shadow 0 0 0 0.15em rgba(200, 200, 200, 0.5)
@@ -369,15 +406,24 @@ body
       border 0.10em #FFF solid
     .song.next div
       border 0.10em #FFF dashed
-    #search
-      background #444
-      border-color #D8D8D8
   &.dark
+    .card,.circleCard
+      background-color rgba(255, 255, 255, 0.25)
+      vendor(box-shadow, 0 0.2em rgba(255, 255, 255, 0.4))
+      &:hover
+        vendor(box-shadow, 0 0.35em rgba(255, 255, 255, 0.4))
+      &:active
+        background-color rgba(255, 255, 255, 0.325)
+        vendor(box-shadow, 0 0em rgba(255, 255, 255, 0.4))
+    .minus
+      border-color #000
+      &::after
+        color #000
     .slimScrollBar
       background-color #000 !important
     .slimScrollRail
       background-color #333 !important
-    .station span
+    .station span,.circledButton
       &:hover
         color #666
       &:active
@@ -397,18 +443,37 @@ body
         background-color #FFF
     #noalbum
       background-color #444
+    #lockOverlay
+      background-color rgba(255, 255, 255, 0.5)
     .station.current
       vendor(box-shadow, 0 0 0 0.15em #000)
     .station.add
-      background-image url('/img/icons/add_dark.svg')
       vendor(box-shadow, 0 0 0 0.15em #000 inset)
     .song.current div
       border 0.10em #000 solid
     .song.next div
       border 0.10em #000 dashed
-    #search
-      background #D8D8D8
       border-color #444
+.minus
+  z-index 1
+  top 2.5vw
+  left 2.5vw
+  width 5em
+  height 5em
+  position absolute
+  border-radius 50%
+  border 3px solid
+  &:after
+    content '\e605'
+    display block
+    top 0
+    left 0
+    right 0
+    bottom 0
+    position absolute
+    text-align center
+    line-height 5rem
+    font-size 3.75em
 
 html.mobile
   #album,#noalbum

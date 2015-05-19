@@ -1,0 +1,177 @@
+@import('utils')
+.ui-front
+  z-index 100
+.ui-autocomplete
+  z-index 6
+  position absolute
+  top 0
+  left 0
+  cursor default
+.ui-menu
+  overflow-y auto
+  list-style none
+  padding 0
+  margin 0
+  display block
+  outline none
+  .ui-menu-item
+    position relative
+    margin 0
+    padding 3px 1em 3px .4em
+    cursor pointer
+    font-family inherit
+    font-size 3em
+#backminus::after
+  content '\e603'
+#filterView
+  > div:not(.circledButton):not(.minus)
+    position absolute !important
+    bottom 0
+    height 70vh
+    top 30%
+    display none
+  .formarea
+    position absolute
+    left 0
+    right 0
+    top 0
+    bottom 25%
+    margin auto
+    height 1.5em
+    text-align center
+    > *
+      text-align left
+  #filterTitle
+    text-align center
+    line-height 30vh
+    margin 0
+    font-size 4em
+    vendor(box-shadow, 0 0 0.25em 0 black)
+  #types
+    right 0.45em
+    left 0.25em
+    position absolute
+    width auto !important
+    font-size 3em
+    p
+      font-size 0.75em
+      padding 0.2em 0 0.5em 0
+    h3
+      padding 0.3em 0 0.1em 0
+    p,h3
+      margin 0
+      text-align center
+    .filterChoice
+      background rgba(0, 0, 0, 0.2)
+      width 100%
+      margin 0.1em 0
+      vendor(transition, background 200ms)
+      cursor pointer
+      &:hover
+        background rgba(0, 0, 0, 0.3)
+      &:active
+        background rgba(0, 0, 0, 0.45)
+  .circledButton
+    z-index 3
+    display none
+    cursor pointer
+    bottom 0
+    width 7rem
+    height 7rem
+    top 66%
+    margin auto
+    border-radius 50%
+    line-height 7rem
+    font-size 5em
+    text-align center
+    border 3px solid
+    position fixed
+    &.left
+      left 0
+      right 15%
+    &.right
+      right 0
+      left 15%
+  #stationList
+    font-size 2em
+    .circleCard
+      height 4em
+      width 4em
+      position relative
+      border-radius 50%
+      cursor pointer
+      background-size 0%
+      background-repeat no-repeat
+      vendor(transition, all 350ms)
+      float left
+      margin 1em 1em 2em 1em
+      top 0.15em
+      &:hover
+        top 0
+        &::after
+          top 5.9375em
+      &:active
+        top 0.35em
+        &::after
+          top 5.5em
+      &::before
+        content ''
+        background-position center
+        background-size cover
+        background-image inherit
+        border-radius 50%
+        vendor(box-sizing, border-box)
+        pos(50, 50, middle center, 2.75em, 2.75em)
+      &::after
+        content attr(title)
+        position absolute
+        text-align center
+        top 5.75em
+        width 5em
+        text-overflow ellipsis
+        white-space nowrap
+        font-size 0.8em
+        overflow hidden
+        vendor(transition, top 350ms)
+body.light
+  .nl-dd ul li:hover, .ui-menu-item:hover, .subview
+    background rgba(0,0,0,0.05)
+  .nl-form .nl-field-go
+     background: rgba(0,0,0,0.1);
+  input:active::-webkit-input-placeholder,
+  input:focus::-webkit-input-placeholder,
+  input:active::-moz-placeholder,
+  input:focus::-moz-placeholder
+    color rgba(255,255,255,0.2)
+  input::-webkit-input-placeholder
+    color rgba(255,255,255,0.8)
+  input::-moz-placeholder
+    color rgba(255,255,255,0.8)
+  .nl-ti-text ul .nl-ti-example
+    color rgba(255,255,255,0.2)
+    border-top 1px dashed rgba(255,255,255,0.5)
+  .nl-overlay
+    background rgba(0,0,0,0.5)
+  .nl-dd ul li:not(.nl-dd-checked)
+    color #DDD
+body.dark
+  .nl-dd ul li:hover, .ui-menu-item:hover, .subview
+    background rgba(255,255,255,0.05)
+  .nl-form .nl-field-go
+     background: rgba(255,255,255,0.1);
+  input:active::-webkit-input-placeholder,
+  input:focus::-webkit-input-placeholder,
+  input:active::-moz-placeholder,
+  input:focus::-moz-placeholder
+    color rgba(0,0,0,0.2)
+  input::-webkit-input-placeholder
+    color rgba(0,0,0,0.8)
+  input::-moz-placeholder
+    color rgba(0,0,0,0.8)
+  .nl-ti-text ul .nl-ti-example
+    color rgba(0,0,0,0.2)
+    border-top 1px dashed rgba(0,0,0,0.5)
+  .nl-overlay
+    background rgba(255,255,255,0.5)
+  .nl-dd ul li:not(.nl-dd-checked)
+    color #222

@@ -14,12 +14,12 @@ var lastfm = new LastFmNode({
 var freq = 14;
 
 function translate(req, res, next) {
-    if (typeof req.params.of !== 'undefined' && req.params.of.slice(-5) == '.opml')
-        req.query.key = req.params.of.slice(0, -5);
+    if (typeof req.params.sid !== 'undefined' && req.params.sid.slice(-5) == '.opml')
+        req.query.key = req.params.sid.slice(0, -5);
     next(null, req, res);
 }
 
-router.get('/stations/:of?', translate, require('../user/isAuthenticated'), function(req, res) {
+router.get('/stations/:sid?', translate, require('../user/isAuthenticated'), function(req, res) {
     var data = [];
     var getInfo = function(station, done) {
         var subdata = {
@@ -83,14 +83,13 @@ router.get('/stations/:of?', translate, require('../user/isAuthenticated'), func
         }
     };
 
-    if (typeof req.params.of !== 'undefined' && req.params.of.slice(-5) != '.opml') {
-        if (req.params.of >= req.user.stations.length)  return res.status(400).end("Station index out of range.");
-        getInfo(req.user.stations[req.params.of], function() {
+    if (typeof req.params.sid !== 'undefined' && (req.params.sid + "").slice(-5) != '.opml') {
+        getInfo(req.user.stations[req.params.sid], function() {
             res.end(JSON.stringify(data[0]));
         });
     } else {
         async.each(req.user.stations, getInfo, function(err) {
-            if (typeof req.params.of !== 'undefined' && req.params.of.slice(-5) == '.opml') {
+            if (typeof req.params.sid !== 'undefined' && (req.params.sid + "").slice(-5) == '.opml') {
                 res.render('squeezebox', {
                     stations: data,
                     url: process.env.URL,

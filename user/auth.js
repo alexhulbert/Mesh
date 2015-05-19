@@ -55,7 +55,7 @@ module.exports = function(passport) {
                 user.activated = true;
                 user.save(function() {
                     req.logIn(user, function() {
-                        res.redirect('/firstStation');
+                        res.redirect('/');
                         next();
                     });
                 });

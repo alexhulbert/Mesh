@@ -4,7 +4,6 @@ var util = require('util');
 var youtube = require('googleapis').youtube('v3');
 var ytdl = require('ytdl-core');
 var proc = require('child_process');
-var gs = require('grooveshark-streaming');
 var request = require('request');
 var async = require('async');
 var path = require('path');
@@ -31,42 +30,12 @@ GLOBAL.stream = function(req, res) {
         //videoEmbeddable: true,
         //videoSyndicated: true
     }, function(err, json) {
-        var grooveshark = function() {
-            if (req.params.dowhat == 'metadata') {
-                gs.Tinysong.getSongInfo(song, artist, function(err, songInfo) {
-                    if (songInfo !== null) {
-                        gs.Grooveshark.getStreamingUrl(songInfo.SongID, function(err, streamUrl) {
-                            proc.exec('ffprobe -i "' + streamUrl + '" -show_format', function(err, stdout) {
-                                res.end(stdout.replace(/[\s\S]*duration=([0-9\.]+)\n[\s\S]+/, '$1'));
-                            });
-                        });
-                    } else {
-                        res.end("0");
-                    }
-                });
-            } else {
-                gs.Tinysong.getSongInfo(song, artist, function(err, songInfo) {
-                    if (songInfo !== null) {
-                        gs.Grooveshark.getStreamingUrl(songInfo.SongID, function(err, streamUrl) {
-                            request(streamUrl)
-                            .on('response', function(resp) {
-                                res.setHeader('content-length', resp.request.response.headers['content-length']);
-                            })
-                            .pipe(res);
-                        });
-                    } else {
-                        console.log('!> Song not found! (' + artist + ':' + song + ')');
-                        res.end(''); //TODO: Tidy this up. Code coverage lacking
-                    }
-                });
-            }
-        };
-        
+        var fallback = function() {};
         var blacklist = ['remake', 'cover', 'full album'];
         var minBitrte = 0;
         if (!json) {
             console.log(err);
-            return grooveshark();
+            return fallback();
         }
         var videos = [];
         for (var item in json.items) {
@@ -74,7 +43,7 @@ GLOBAL.stream = function(req, res) {
             var searchStr = query.toLowerCase();
             var matches = true;
             for (var black in blacklist) {
-                if (~searchStr.indexOf(black) || ~video.indexOf(black)) {
+                if (~searchStr.indexOf(blacklist[black]) || ~video.indexOf(blacklist[black])) {
                     matches = false;
                     break;
                 }
@@ -89,7 +58,7 @@ GLOBAL.stream = function(req, res) {
                     id: -1
                 };
                 if (typeof info === 'undefined') return videoValid(null);
-                for (var i = (info.formats.length - 1); i >= 0; i--) {
+                for (var i in info.formats) {
                     var format = info.formats[i];
                     if (
                         format.type.indexOf('audio') === 0 &&
@@ -156,7 +125,7 @@ GLOBAL.stream = function(req, res) {
                 }
             });
         }, function(videoExists) {
-            if (!videoExists) return grooveshark();
+            if (!videoExists) return fallback();
         });
     });
 };

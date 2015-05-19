@@ -5,11 +5,9 @@ var echo = require('echojs')({
 });
 
 router.get('/feedback/:sid/:funct/:song?/:rating?', require('../user/isAuthenticated'), function(req, res) {
-    var sid = req.params.sid;
-    if (sid >= req.user.stations.length) return res.status(400).end('Station index out of range.');
-    var song =   (typeof req.params.song === 'undefined') ? 'last' : req.params.song;
+    var song = (typeof req.params.song === 'undefined') ? 'last' : req.params.song;
     var data = {
-        session_id: req.user.stations[sid].playlist,
+        session_id: req.user.stations[req.params.sid].playlist,
         update_catalog: true
     };
     switch(req.params.funct) {
@@ -20,8 +18,10 @@ router.get('/feedback/:sid/:funct/:song?/:rating?', require('../user/isAuthentic
             data.ban_song = song;
         break;
         case 'rate':
+            if (req.params.rating > 10 || req.params.rating < 0)
+                return req.end('');
             data.rate_song = song + '^' + req.params.rating;
-        break; 
+        break;
     }
     echo('playlist/dynamic/feedback').get(data, function(err, json) {
         res.end('');

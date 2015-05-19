@@ -1,0 +1,157 @@
+.nl-form {
+  width: 100%;
+  margin: 0.3em auto 0 auto;
+  font-size: 4em;
+  line-height: 1.5;
+}
+.nl-form ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.nl-form input:focus {
+  outline: none;
+}
+.nl-form .nl-field-go {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  cursor: pointer;
+  width: 1.8em;
+  text-align: center;
+  color: transparent;
+}
+.nl-form input,
+.nl-form select,
+.nl-form button {
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  display: inline-block;
+  padding: 0;
+  margin: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  -o-appearance: none;
+  appearance: none;
+}
+.nl-field {
+  display: inline-block;
+  position: relative;
+}
+.nl-field.nl-field-open {
+  z-index: 4;
+}
+.nl-field.nl-field-open ~ .nl-overlay {
+  opacity: 1;
+  visibility: visible;
+  -webkit-transition-delay: 0s;
+  -moz-transition-delay: 0s;
+  -o-transition-delay: 0s;
+  transition-delay: 0s;
+}
+.nl-field-toggle,
+.nl-form input,
+.nl-form select {
+  line-height: inherit;
+  display: inline-block;
+  cursor: pointer;
+}
+.nl-field ul,
+.ui-autocomplete {
+  position: absolute;
+  visibility: hidden;
+  left: -0.5em;
+  top: 50%;
+  font-size: 80%;
+  opacity: 0;
+  -webkit-transform: translateY(-40%) scale(0.9);
+  -moz-transform: translateY(-40%) scale(0.9);
+  -o-transform: translateY(-40%) scale(0.9);
+  transform: translateY(-40%) scale(0.9);
+  -webkit-transition: visibility 0s 0.3s;
+  -moz-transition: visibility 0s 0.3s;
+  -o-transition: visibility 0s 0.3s;
+  transition: visibility 0s 0.3s;
+}
+.nl-field.nl-field-open ul,
+.ui-autocomplete {
+  visibility: visible;
+  opacity: 1;
+  -webkit-transform: translateY(-50%) scale(1);
+  -moz-transform: translateY(-50%) scale(1);
+  -o-transform: translateY(-50%) scale(1);
+  transform: translateY(-50%) scale(1);
+  -webkit-transition: visibility 0s 0s;
+  -moz-transition: visibility 0s 0s;
+  -o-transition: visibility 0s 0s;
+  transition: visibility 0s 0s;
+}
+.nl-field ul li,
+.ui-menu-item {
+  position: relative;
+}
+.nl-dd ul li,
+.ui-menu-item {
+  padding: 0 1.5em 0 0.5em;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nl-dd ul li.nl-dd-checked:before,
+.nl-field-go:before {
+  font-family: 'icons';
+  speak: none;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  -webkit-font-smoothing: antialiased;
+}
+.nl-dd ul li.nl-dd-checked:before {
+  content: "\e601";
+  position: absolute;
+  right: 1em;
+  font-size: 50%;
+  line-height: 3;
+}
+.nl-ti-text ul {
+  min-width: 8em;
+}
+.nl-ti-text ul .nl-ti-input input {
+  width: 6.2em;
+  padding: 0.2em 2em 0.2em 0.5em;
+  border-bottom: none !important;
+}
+.nl-ti-text ul .nl-ti-example {
+  font-size: 40%;
+  font-style: italic;
+  font-weight: 400;
+  padding: 0.4em 1em;
+}
+.nl-field-go:before {
+  content: "\e604";
+  font-size: 75%;
+  color: #fff;
+  width: 100%;
+  line-height: 2.5;
+  display: block;
+}
+.nl-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 3;
+  visibility: hidden;
+  -webkit-transition: visibility 0s 0.3s;
+  -moz-transition: visibility 0s 0.3s;
+  -o-transition: visibility 0s 0.3s;
+  transition: visibility 0s 0.3s;
+}

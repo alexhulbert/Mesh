@@ -3,24 +3,34 @@ extends layout.jade
 block scripts
  | https://code.jquery.com/jquery-2.1.1.min.js
  | /js/lib/jquery.nouislider.all.min.js
- | /js/lib/fancyInput.js
- | /js/lib/jquery.sidr.js
- | /js/lib/tinyColor.js
- | /js/lib/please.js
  | /js/lib/color-thief.js
  | /js/lib/jquery.sortable.min.js
  | /js/lib/jquery.throttle.min.js
  | /js/lib/jquery.slimscroll.min.js
+ | /js/lib/jquery.autocomplete.min.js
+ | /js/lib/jquery.sidr.js
+ | /js/lib/huejs.js
+ | /js/lib/nlform.js
+ | /js/lib/fancyInput.js
+ | /js/lib/tinyColor.js
+ | /js/lib/please.js
+ | /js/lib/cookies.js
+ | /js/lib/vex.combined.min.js
  | /js/searchView.js dynamic
+ | /js/filters.js dynamic
  | /js/player.js dynamic
 
 block css
+ | /css/lib/nlform.css
+ | /css/lib/vex.css
+ | /css/lib/vex-theme-flat-attack.css
  | /css/player.css dynamic
  | /css/station.css dynamic
-
+ | /css/filters.css dynamic
 block content
   #player
-    +icon('searchSong', 'draggable', 'showSearch("song");')
+    +icon('searchSong', 'search', 'showSearch("song");')
+    +icon('filterBtn', 'brain', 'showFilter("station", true);')
     #background
     +icon('stations', 'stations', 'noclick')
     +icon('songs', 'history', 'noclick')
@@ -30,30 +40,22 @@ block content
       #progress
       a(target='_blank', onclick='this.src = music().audio.src; $(this).click().removeAttr(\'src\');')
       +icon('back', 'skipBack', 'back();')
-      +icon('dislike', 'brokenHeart', 'feedback("dislike");')
-      +icon('undislike', 'brokenHeartFilled', 'feedback("undislike");').hidden
+      +icon('dislike', 'brokenHeart', 'feedback("like");')
       +icon('next', 'skip', 'next();')
       +icon('like', 'heart', 'feedback("like");')
-      +icon('unlike', 'heartFilled', 'feedback("unlike");').hidden
       +icon('play', 'play', 'play();')
       +icon('pause', 'pause', 'pause();').hidden
     audio#audio(src='')
-    #noalbum
+    #noalbum.albumPos
       +icon('centerpiece', '../logo')
-    #album
-    //  +icon('download', 'download')
-    //a#feedbackIcon.wheel-button.ne
-    //+icon('feedbackBtn', 'heart', 'noclick')
-    //
-      ul#feedback.wheel(data-angle='NE')
-        li.item
-          +icon('like', 'heart')
-        li.item
-          +icon('dislike', 'brokenHeart')
+    #album.albumPos
+    #lockOverlay.albumPos
+      +icon('ellipsis', 'ellipsis', 'noclick')
+    //+icon('download', 'download')
     #stat
       .container
         .add.station(onclick='showSearch("bootstrap");', data-id='-1')
-          div
+          div &#xe602;
       #scUp
       #scDown
     #song
@@ -62,28 +64,28 @@ block content
           div(onclick='if (!locked) mesh();')
           span
             span
-    input#search
-  #searchView
-    #minus.clickable
+  #searchView.view
+    .minus.clickable
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style="margin-top: -1em")
       #down.arrow.card(onclick="scrollPage(1)", style="display: none") &#9660;
       #up.arrow.card(onclick="scrollPage(0)", style="display: none")   &#9650;
     section#answer
-      span#cancel.clickable &#10005;
+      span#cancel.clickable &#xe600;
       .fancyInput
         input(type='text')
+  include filters
   #bubble
   #loading
     object#loadLogo(type='image/svg+xml', data='/img/logo.svg')
     #centerText Alex Hulbert
     #meshText MESH
     #leftText
-      span.cap  Design Concepts
+      span.cap  Initial Concepts
       br
       span.name Sergey Safonov
     #rightText
-      span.cap  Powered By
+      span.cap  Built Using
       br
       span.name The Echonest

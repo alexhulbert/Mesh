@@ -1,9 +1,30 @@
-a=b=0
+var ratio = 0;
+var hasAlbum = false;
 theme = {
     "sidebar": function(mode) { /* Runs when the sidebar is opened/closed*/ },
     "draw": function(data) {
+        //data.dark means the UI (and not the text) is dark
+        //body.dark (the class) means the font is dark
+        //Set variables for tick to reference
+        if (usingHue) {
+            //TODO: set 1,2
+            hue.setValue([1,2],{
+                hue: Math.round(data.color[0]*200),
+                sat: Math.round(parseInt(data.color[1].slice(0, -1))*2.55),
+                bri: Math.round(data.color[2]*2.55)
+            });
+        }
+        hasAlbum =
+            typeof songs[curSong] !== 'undefined' &&
+            typeof songs[curSong].albumUrl !== 'undefined' &&
+            songs[curSong].albumUrl != '/img/noAlbum.png'
+        ;
+        //Feel free to tweak these ratios on your own Higher -> colorful/subtle
+        ratio = hasAlbum ?
+            +0.500: //This is for when there isn't an album
+            -0.333; //This is for when an album is present
         //Runs when a new song is loaded
-        $('#searchView,.noUi-base').css({
+        $('.view,.noUi-base').css({
             background: 'hsl(' + data.color.join(',') + '%)'
         }); //Setting search view and progress bar background-color
         var hsl =
@@ -14,9 +35,30 @@ theme = {
         $('.fancyInput,.noUi-background').css({
             'background-color': 'hsl(' + hsl + ')'
         }); //Setting foreground color on progbar/search view
+        
         $('.sidr .container').css({
             'background-color': 'hsla(' + hsl + ',0.675)'
         }); //Coloring the sidebar
+        
+        var colorA =
+            'hsl(' + ((data.color[0] + 120) % 360)
+            + ',' + (parseFloat(data.color[1])+50)/2 + '%,' +
+            ((data.dark ? 75 : 25) + data.color[2])/2 + '%)'
+        ;
+        $('.nl-dd ul, nl-dd ul li:hover:active').css('color', colorA);
+        var colorB =
+            'hsl(' + ((data.color[0] + 240) % 360)
+            + ',' + parseFloat(data.color[1])/2 + '%,'
+        ;
+        var colorDarker = colorB + ((data.dark ? 100 : 0) + data.color[2])/2 + '%)';
+        colorB += data.color[2] + '%)';
+        
+        $('.nl-field ul, .ui-autocomplete').css('background', colorB);
+        $('.nl-form select, .nl-form input, .nl-field-toggle').css({
+            'color': colorDarker,
+            'border-bottom': '1px dashed ' + colorDarker
+        });
+        
         
         var str = data.songName + '<br>' + data.artistName;
         if (data.albumName !== null) str += ' - ' + data.albumName;
@@ -68,26 +110,17 @@ theme = {
         //Rerun this function next frame if music is playing
         if (isRunning) requestAnimationFrame(theme.tick);
         //Load sound volume
-        music().analyser.getByteFrequencyData(music().frequencyData);
+        ear.analyser.getByteFrequencyData(ear.frequencies);
         
         //Get average volume
         var avg = 0;
         //Ignore all but first 80 to prevent pollution from drums
-        for (var i = 0; i < 80; i++) avg += music().frequencyData[i];
+        for (var i = 0; i < 80; i++) avg += ear.frequencies[i];
         //Treat the rest as zeros
-        avg /= music().frequencyData.length;
+        avg /= ear.frequencies.length;
         avg *= 4; //Change this to make the circle more sensitive
         
         var hslVal, bri;
-        var hasAlbum =
-            typeof songs[curSong] !== 'undefined' &&
-            typeof songs[curSong].albumUrl !== 'undefined' &&
-            songs[curSong].albumUrl != '/img/noAlbum.png'
-        ;
-        //Feel free to tweak these ratios on your own Higher -> colorful/subtle
-        var ratio = hasAlbum ?
-            +0.500: //This is for when there isn't an album
-            -0.333; //This is for when an album is present
         if (light)
             bri = (((color[2] + (100 - avg*0.75))/2 - 10)*ratio + (100 - avg))*(1 - ratio);
         else
@@ -106,7 +139,7 @@ theme = {
     },
     "init": function() {
         //Make the album edges rounded
-        $('#album,#noalbum').css('border-radius', '1em');
+        $('.albumPos').css('border-radius', '1em');
         //Add some more padding inside the album
         $('#download,#feedbackBtn,#feedbackIcon').css('top', '2.5vh');
         $('#feedbackBtn,#feedbackIcon').css('right', '2.5vh');

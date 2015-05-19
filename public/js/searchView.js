@@ -22,13 +22,33 @@ function clrSearch() {
     fi.val('');
     $('#searchView').removeClass('choose done');
     $('.card:not(.arrow)').remove();
+    $('#up,#down').fadeOut();
+    co.css('margin-top', '-1em');
+}
+
+function resizeText() {
+    var e = $(this);
+    var visibleText = e.siblings('div');
+    var maxSize = $(window).height() * 0.2;
+    var ratio = $(window).width() / (visibleText.width() || 1);
+    var oldSize = parseInt(e.css('font-size'), 10);
+    var fontSize = Math.min(maxSize, Math.floor(oldSize*ratio));
+    e.css('font-size', fontSize);
+    visibleText.css({
+        'font-size': fontSize,
+        'line-height': 2*maxSize - fontSize + 'px'
+    });
 }
 
 function initSearch() {
     fi = $('#answer :input');
     co = $('#container');
     fi.fancyInput();
-    $('#minus').click(hideSearch);
+    $('#searchView input')
+        .on('keyup.resize keydown.resize', resizeText)
+        .triggerHandler('keyup.resize')
+    ;
+    $('#searchView .minus').click(hideSearch);
     $('#cancel').click(clrSearch);
 }
 
@@ -49,6 +69,9 @@ function showSearch(view) {
     curView = view;
     $('#bubble').attr('style', '');
     $.sidr('close', 'stat');
+    $('.minus').css({
+        display: (curView == 'firstStation') ? 'none' : 'block'
+    });
     $('#searchView').css('display', 'block');
     setTimeout(function() {
         $('#searchView')
@@ -63,7 +86,7 @@ function showSearch(view) {
 
 function addStat() {
     var query = $('#answer :input').val();
-    var bootstrapMode = curView == 'bootstrap';
+    var bootstrapMode = curView != 'song';
     //Loading sign
     $.ajax(base + '/search/' + encodeForURI(query) + (bootstrapMode ? '' : '/noGenre' )).done(function(results) {
         for (var i in results) {
@@ -97,7 +120,7 @@ function addStat() {
             elem.appendTo('#container');
         }
         $('#searchView').addClass('choose');
-        refreshScroll();
+        setTimeout(refreshScroll, 350);
     });
 }
 
@@ -107,7 +130,7 @@ function selectSong(self) {
     var query = target.data('query');
     if (target.find('.type').text() == 'song')
         query = $.parseHTML(target.find('.name').html().split('<br>')[1])[0].textContent;
-    var funct = (curView == 'bootstrap' ? bootstrapSearch : playSearch)
+    var funct = (curView != 'song' ? bootstrapSearch : playSearch);
     funct(target, query);
 }
 
@@ -126,7 +149,7 @@ function refreshScroll() {
 function scrollPage(doUp) {
     var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
     co.css('margin-top', mtop + (doUp ? -8.25 : 8.25) + 'em');
-    refreshScroll();
+    setTimeout(refreshScroll, 350);
 }
 
 function playSearch(target, query) {
@@ -230,7 +253,7 @@ function bootstrapSearch(target, query) {
                         width:  '7.875em',
                         height: '7.875em'
                     }), 1000, 'swing', function() {
-                        loadStation(data);
+                        (curView == 'firstStation' ? initWithStation : loadStation)(data);
                         sFreeze = false;
                         bubble
                             .addClass('noTransition')

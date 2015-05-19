@@ -1,7 +1,7 @@
 theme = {
     "sidebar": function() { },
     "draw": function(data) {
-        $('#searchView').css('background', 'hsl(' + data.color.join(',') + '%)');
+        $('.view').css('background', 'hsl(' + data.color.join(',') + '%)');
         $('.sidr .container,.fancyInput').css('background-color', 'hsl(' + data.color[0] + ',' + data.color[1] + ',' + Math.min(data.color[2] + (data.dark ? -10 : 10), 100) + '%)');
         var str = data.songName + '<br>' + data.artistName;
         if (data.albumName !== null) str += ' - ' + data.albumName;
@@ -17,19 +17,36 @@ theme = {
             'hsl(' + color[0] + ',' + color[1] + ',' + glowBri + '%) 0%, ' + 
             'hsl(' + color.join(',') + '%) 95%) !important; }'
         );
+        var colorA =
+            'hsl(' + ((data.color[0] + 120) % 360)
+            + ',' + (parseFloat(data.color[1])+50)/2 + '%,' +
+            ((data.dark ? 75 : 25) + data.color[2])/2 + '%)'
+        ;
+        $('.nl-dd ul, nl-dd ul li:hover:active').css('color', colorA);
+        var colorB =
+            'hsl(' + ((data.color[0] + 240) % 360)
+            + ',' + parseFloat(data.color[1])/2 + '%,'
+        ;
+        var colorDarker = colorB + ((data.dark ? 100 : 0) + data.color[2])/2 + '%)';
+        colorB += data.color[2] + '%)';
+        
+        $('.nl-field ul, .ui-autocomplete').css('background', colorB);
+        $('.nl-form select, .nl-form input, .nl-field-toggle').css({
+            'color': colorDarker,
+            'border-bottom': '1px dashed ' + colorDarker
+        });
     },
     "tick": function() {
         if (isRunning) {
             requestAnimationFrame(theme.tick);
         }
-        music().analyser.getByteFrequencyData(music().frequencyData);
+        ear.analyser.getByteFrequencyData(ear.frequencies);
         var avg = 0;
         for (var i  = 0; i < 80; i++) {
-            avg += music().frequencyData[i];
+            avg += ear.frequencies[i];
         }
-        avg /= music().frequencyData.length;
+        avg /= ear.frequencies.length;
         avg *= 5; //Amplitude
-        alert(music().frequencyData);
         var bri;
         if (light) {
             bri = (color[2] + (100 - avg*0.75))/2 - 10;

@@ -1,0 +1,47 @@
+@font-face {
+	font-family: 'icons';
+	src:url('icons.eot?-jn5cnx');
+	src:url('icons.eot?#iefix-jn5cnx') format('embedded-opentype'),
+		url('icons.woff?-jn5cnx') format('woff'),
+		url('icons.ttf?-jn5cnx') format('truetype');
+	font-weight: normal;
+	font-style: normal;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+	font-family: 'icomoon';
+	speak: none;
+	font-style: normal;
+	font-weight: normal;
+	font-variant: normal;
+	text-transform: none;
+	line-height: 1;
+
+	/* Better Font Rendering =========== */
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+.icon-left:before {
+	content: "\e603";
+}
+
+.icon-right:before {
+	content: "\e604";
+}
+
+.icon-n:before {
+	content: "\e600";
+}
+
+.icon-y:before {
+	content: "\e601";
+}
+
+.icon-minus:before {
+	content: "\e605";
+}
+
+.icon-plus:before {
+	content: "\e602";
+}
