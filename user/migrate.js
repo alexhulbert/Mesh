@@ -11,17 +11,9 @@ router.get('/migrate', function(req, res) {
     Users.find({}, function(err, users) {
         var log = '';
         async.each(users, function(user, next) {
-            for (var s in user.stations) {
-                var songs = user.stations[s].recentlyPlayed;
-                if (typeof songs === 'undefined' || !~songs.indexOf(',')) continue;
-                songs = songs.split(',');
-                var out = '';
-                for (var i in songs) {
-                    out += songs[i].slice(2);
-                }
-                log += user.email + ': ' + songs.toString() + ' => ' + out + '\n';
-                user.stations[s].recentlyPlayed = out;
-            }
+            for (var s in user.stations)
+                user.stations[s].filters = [];
+            user.markModified('stations');
             user.save(next);
         }, function() {
             res.end(log + 'SUCCESS');
