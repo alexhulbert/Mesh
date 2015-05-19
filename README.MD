@@ -31,11 +31,12 @@ With so many alternative music services, what makes Mesh so much better? I've co
 |      27-36 Million Songs     |    Varying Quality (Usually HD)    |
 |   On-Demand Song Streaming   |                                    |
 |            Free!             |                <br>                |
+|    Extreme Customization     |                                    |
 
 How can I use it?
 -----------------
 
-Your either going to need to get a beta key for an existing server or host one yourself. Here's how to do the latter:
+Your either going to need to get a invite code for an existing server or host one yourself. Here's how to do the latter:
 
 1. __Clone the project__: Either run ```git clone https://github.com/taconut/mesh``` or Extract the zip manually. I personally reccomend the using git clone, since you can run ```git pull``` to update when there are changes. 
 2. __Install Dependencies__: Mesh also requires [FFMPEG](https://www.ffmpeg.org/) and [GraphicsMagick](http://www.graphicsmagick.org/) (for the title page). Most online Node.JS services have these preinstalled, so you only need to worry about this if you're working on a local computer.
@@ -48,8 +49,8 @@ Your either going to need to get a beta key for an existing server or host one y
 6. __Setup a user database__: For the time being, Mesh only supports mongo. There are plenty of free services for using Mongo databases.
 7. __Setup an email service__: For email recovery and verification to work, you're also going to need an email account. Gmail should suffice, but there are other options available if you need them.
 8. __Add a Session Secret__: Your going to need a value for SESSION_SECRET. Try to use something that people would have a relatively hard time guessing (so not "secret").
-9. __Create an admin account__: The first account you create will have admin privlages. Go to /user/signup to create your admin user. You can leave the "beta key" section blank since there are no beta keys yet .
-10. __Add beta keys__: Right now, beta keys are mandatory. You can add them by going to /admin/key/__KEY__. Additionally, you can supply a number of uses and expiry date. Refer to the [Admin Reference Page](../../wiki/Admin) for more information.
+9. __Create an admin account__: The first account you create will have admin privlages. Go to /user/signup to create your admin user. You can leave the "invite code" section blank since there are no invite codes yet .
+10. __Add invite codes__: Right now, invite codes are mandatory. You can add them by going to /admin/key/__CODE__. Additionally, you can supply a number of uses and expiry date. Refer to the [Admin Reference Page](../../wiki/Admin) for more information.
 
 How does it work?
 -----------------
