@@ -30,7 +30,10 @@ GLOBAL.stream = function(req, res) {
         //videoEmbeddable: true,
         //videoSyndicated: true
     }, function(err, json) {
-        var fallback = function() {};
+        var fallback = function() {
+            //TODO: Add other audio services
+            res.end(req.params.dowhat == 'metadata' ? '0' : '');
+        };
         var blacklist = ['remake', 'cover', 'full album'];
         var minBitrte = 0;
         if (!json) {
