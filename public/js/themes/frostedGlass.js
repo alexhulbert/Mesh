@@ -107,11 +107,15 @@ theme = {
     },
     "tick": function() {
         //Runs each tick when music is playing
-        //Rerun this function next frame if music is playing
-        if (isRunning) requestAnimationFrame(theme.tick);
+        //Throttle tick function to {ear.refresh}ms to maintain framerate
+        if (Date.now() - ear.lastTick <= ear.refresh) {
+            //Queue this function for the next frame and exit
+            if (isRunning) requestAnimationFrame(theme.tick);
+            return;
+        }
+        ear.lastTick = Date.now();
         //Load sound volume
         ear.analyser.getByteFrequencyData(ear.frequencies);
-        
         //Get average volume
         var avg = 0;
         //Ignore all but first 80 to prevent pollution from drums
@@ -136,6 +140,8 @@ theme = {
                 avg + '%, hsl(' + color.join(',') + '%) 95%)'
             ); //Add circle to background if there's no album image
         }
+        //Rerun this function next frame if music is playing
+        if (isRunning) requestAnimationFrame(theme.tick);
     },
     "init": function() {
         //Make the album edges rounded

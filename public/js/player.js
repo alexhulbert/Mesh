@@ -32,7 +32,7 @@ var base = location.href.slice(0, -5);
 var globalOverhead = 0;
 var audioWorkaround = !!navigator.userAgent.match(/iPhone|AppleCore|iTunes|undefined|chrome/gi);
 var colorThief = new ColorThief();
-var ear = {};
+var ear = { refresh: 33 };
 var locked = false;
 var donePreloading = false;
 var likeStatus = {
@@ -753,6 +753,7 @@ function squeezebox(username, password, ip, port) {
 }
 
 function init() {
+    ear.lastTick = Date.now();
     ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
     ear.analyser = ear.context.createAnalyser(),
     ear.frequencies = new Uint8Array(ear.analyser.frequencyBinCount);
