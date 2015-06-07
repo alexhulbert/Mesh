@@ -11,7 +11,7 @@ router.get('/admin/key/:key/:uses?/:expires?', require('../user/isAuthenticated'
         if (key) {
             key.usesLeft = req.params.uses || key.usesLeft;
             key.expires  = req.params.expires || null;
-            betaKey.save(function(err) {
+            key.save(function(err) {
                 //Cast string to inverted boolean, then to int, then back to string
                 res.end(+!err+'');
             });
