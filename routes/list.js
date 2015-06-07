@@ -96,12 +96,8 @@ router.get('/stations/:sid?', translate, require('../user/isAuthenticated'), fun
                     key: req.query.key
                 });
             } else {
-                var orderedData = [];
-                for (var i in data) {
-                    orderedData[parseInt(req.user.order[i])] = data[i];
-                }
                 res.end(JSON.stringify({
-                    stations: orderedData,
+                    stations: data,
                     lastStation: req.user.lastStation
                 }));
             }

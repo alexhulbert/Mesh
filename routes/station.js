@@ -30,8 +30,6 @@ var stationLoad = function(req, res) {
         },
         function(next) {
             req.user.lastStation = req.params.sid;
-            if (req.user.order.length >= req.params.sid)
-                req.user.order.splice(0, 0, req.user.order.splice(req.params.sid, 1)[0]);
             echo('playlist/dynamic/create').get({
                 seed_catalog: req.user.stations[req.params.sid].id,
                 type: 'catalog-radio',
@@ -85,10 +83,6 @@ var stationUnload = function(req, res, doDelete) {
     }, function(err, json) {
         if (doDelete) {
             var fid = req.user.stations[req.params.sid].id;
-            req.user.order.splice(req.user.order.indexOf(req.params.sid), 1);
-            for (var i in req.user.order) {
-                if (req.user.order[i] > parseInt(req.params.sid)) req.user.order[i]--;
-            }
             if (req.params.sid == req.user.stations.length - 1) {
                 req.user.stations.pop();
                 if (req.user.lastStation == req.params.sid) {

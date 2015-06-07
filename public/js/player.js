@@ -40,6 +40,34 @@ var likeStatus = {
     LIKE: 1,
     DISLIKE: 2
 };
+var errors = [];
+
+window.addEventListener('error', function(err) {
+    if (errors.length > 50) return;
+    var lineAndColumnInfo = err.colno ? ' line:' + err.lineno +', column:'+ err.colno : ' line:' + err.lineno;
+    errors.push(
+        'ERROR!\n' + 
+        err.message + '\n' + 
+        err.filename + lineAndColumnInfo + '\n' +
+        navigator.userAgent + '\n' +
+        'Current Song: ' + songs[curSong].id + '\n' +
+        'Previous Song: ' + songs[curSong && curSong - 1].id + '\n'
+    );
+});
+
+function bugReport() {
+    var blob = new Blob([errors.join('\n')], {type: 'text/plain'});
+    var el = $('<a download></a>')
+        .attr({
+            'href': URL.createObjectURL(blob),
+            'download': 'BugReport.txt'
+        })
+        .appendTo('body')
+    ;
+    el[0].click();
+    el.remove();
+};
+
 vex.defaultOptions.className = 'vex-theme-flat-attack';
 $.fn.extend({
     in: function() {
@@ -211,22 +239,6 @@ function chooseTheme(themeName, callback) {
     });
 }
 
-function refreshStations() {
-    con.sortable('destroy');
-    con.sortable({
-        items: '.station:not(.add)'
-    });
-    con.sortable().bind('sortupdate', function(e, ui) {
-        var item = $(ui.item);
-        var oldS = item.data('orderIndex');
-        var newS = 7 - item.index();
-        if (oldS != newS) {
-            $.ajax('/order/' + oldS + '/' + newS);
-            item.data('orderIndex', newS);
-        }
-    });
-}
-
 function login(cb) {
     $.ajax(base + '/user/authenticated').done(function(loggedIn) {
         if (!+loggedIn) {
@@ -394,7 +406,6 @@ function deleteStation(id, event) {
     if (curStation == id) pause();
     $.ajax(base + '/station/delete/' + id).done(function(resp) {
         updateHistory('remove', id);
-        refreshStations();
         if (curStation == id) {
             loadStation(resp);
         } else {
@@ -659,7 +670,6 @@ function appendStation(station) {
         .attr('title', station.name)
         .css('background-image', 'url(' + station.image + ')')
         .data('id', station.id)
-        .data('orderIndex', $('#stat .container .station:not(.add)').length)
         .attr('data-id', station.id)
         .insertAfter('#stat .container > .station:first')
     ;
@@ -671,7 +681,6 @@ function appendStation(station) {
         .attr('onclick', 'filterStation(' + station.id + ');')
         .prependTo('#stationList')
     ;
-    refreshStations();
     return elem.add(card);
 }
 
