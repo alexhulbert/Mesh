@@ -381,6 +381,7 @@ function mesh(ind, part, callback) {
     } else {
         var soin = songs[ind];
         if (part & 1) {
+            inQueue = true;
             load(soin);
         }
         if (part & 2) {
