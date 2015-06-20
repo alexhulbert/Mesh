@@ -98,7 +98,8 @@ router.get('/stations/:sid?', translate, require('../user/isAuthenticated'), fun
             } else {
                 res.end(JSON.stringify({
                     stations: data,
-                    lastStation: req.user.lastStation
+                    lastStation: req.user.lastStation,
+                    email: req.user.email
                 }));
             }
         });

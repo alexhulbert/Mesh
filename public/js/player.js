@@ -40,6 +40,7 @@ var likeStatus = {
     LIKE: 1,
     DISLIKE: 2
 };
+var whoami = '<UNKNOWN IDENTITY>';
 var errors = [];
 
 window.addEventListener('error', function(err) {
@@ -56,17 +57,18 @@ window.addEventListener('error', function(err) {
 });
 
 function bugReport() {
-    var blob = new Blob([errors.join('\n')], {type: 'text/plain'});
+    var blob = new Blob([whoami + '\n' + errors.join('\n')], {type: 'text/plain'});
     var el = $('<a download></a>')
         .attr({
             'href': URL.createObjectURL(blob),
-            'download': 'BugReport.txt'
+            'download': 'mesh_bug-' + Date.now() + '.txt'
         })
         .appendTo('body')
     ;
     el[0].click();
     el.remove();
-};
+}
+Mousetrap.bind('ctrl+shift+/', bugReport);
 
 vex.defaultOptions.className = 'vex-theme-flat-attack';
 $.fn.extend({
@@ -702,6 +704,7 @@ function initWithStation(index) {
 function getStations() {
     $.ajax(base + '/stations').done(function(res) {
         var data = JSON.parse(res);
+        whoami = data.email || whoami;
         if (data.stations.length) {
             for (var i in data.stations) {
                 var station = data.stations[i];
