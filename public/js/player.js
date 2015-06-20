@@ -167,7 +167,7 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         ;
         
         if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
-    } else console.log("UNHANDLED SONG ERROR!", e);
+    } else console.log("UNHANDLED SONG ERROR!", e.path[0].error);
 };
 
 function encodeForURI(input) {

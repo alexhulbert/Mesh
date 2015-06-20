@@ -8,6 +8,9 @@ var echo = require('echojs')({
 });
 
 var stationLoad = function(req, res) {
+    if (typeof req.user.stations[req.params.sid].id === 'undefined')
+        return stationDelete(req, res);
+    
     if (req.params.sid == req.user.lastStation) {
         var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
         if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {

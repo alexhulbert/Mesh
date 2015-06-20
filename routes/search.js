@@ -14,18 +14,50 @@ var lastfm = new LastFmNode({
 var locks = GLOBAL.db.get('locks');
 var freq = 60;
 
-GLOBAL.updateGenres = function(genres, next) {
-    echo('genre/list').get({
-        results: 2000
-    }, function(err, json) {
+//updateList
+GLOBAL.updateList = function(type, items, next) {
+    var typeData;
+    switch(type) {
+        case 'genres':
+            typeData = {
+                name: 'genres',
+                echo: 'genre/list',
+                prop: {
+                    results: 2000
+                },
+                keys: 'genres'
+            };
+        break;
+        case 'moods':
+            typeData = {
+                name: 'moods',
+                echo: 'artist/list_terms',
+                prop: {
+                    type: 'mood'
+                },
+                keys: 'terms'
+            };
+        break;
+        case 'styles':
+            typeData = {
+                name: 'styles',
+                echo: 'artist/list_terms',
+                prop: {
+                    type: 'style'
+                },
+                keys: 'terms'
+            };
+        break;
+    }
+    echo(typeData.echo).get(typeData.prop, function(err, json) {
         var list = [];
-        for (var i in json.response.genres) {
-            list.push(json.response.genres[i].name);
+        for (var i in json.response[typeData.keys]) {
+            list.push(json.response[typeData.keys][i].name);
         }
         if (!err) {
             locks.findAndModify({
                 query: {
-                    name: 'genres'
+                    name: typeData.name
                 },
                 upsert: true,
                 update: {
@@ -36,7 +68,7 @@ GLOBAL.updateGenres = function(genres, next) {
                 }
             });
             next(list);
-        } else next(genres);
+        } else next(items);
     });
 };
 
@@ -53,7 +85,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
         function(genres, next) { //Update Genre list
             var emptyGenre = typeof genres === 'undefined' || genres === null;
             if (emptyGenre || moment(genres.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
-                GLOBAL.updateGenres(emptyGenre ? [] : genres, function(list) {
+                GLOBAL.updateList('genres', emptyGenre ? [] : genres, function(list) {
                     next(null, list);
                 });
             } else {

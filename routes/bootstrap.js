@@ -39,7 +39,7 @@ router.get('/bootstrap/:q/:id?', /*translate,*/ require('../user/isAuthenticated
                 name: 'genres'
             }, {}, function(err, resp) {
                 if (err || !resp) {
-                    GLOBAL.updateGenres([], function(list) {
+                    GLOBAL.updateList('genres', [], function(list) {
                         next(null, id, list);
                     });
                 } else next(null, id, resp.list);

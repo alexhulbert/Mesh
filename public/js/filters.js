@@ -1,6 +1,31 @@
 var curPage = 'none';
 var filterIndex = -1;
 var currentFilter = $();
+var bigList = {
+    moods: [],
+    styles: []
+};
+
+function refreshFilters(index) {
+    $.ajax(base + '/filter/list/' + index).done(function(filterStr) {
+        var filters = JSON.parse(filterStr);
+        $('#manage').empty();
+        for (var f in filters) {
+            var filter = filters[f];
+            $('<div><div>')
+                .addClass('filterItem')
+                .data(filter)
+                .append('<div class="deleteFilter"></div>')
+                .append(
+                    $('<div></div>')
+                        .addClass('filterDesc')
+                        .text(filter.desc)
+                )
+                .appendTo('#manage')
+            ;
+        }
+    });
+}
 
 function predictInput(selector, tokens) {
     $(selector).prev().find('.nl-ti-input input').autocomplete({
@@ -108,6 +133,12 @@ function initFilters() {
 	for (var adjective in generalMap)
 		generalKeys.push(adjective);
 	predictInput('.subview[data-page=general] .filterKey', generalKeys);
+
+    $.ajax(base + '/filter/choices').done(function(choices) {
+        bigList = JSON.parse(choices);
+        //TODO: predictInput('.subview[data-page=mood] .filterKey', bigList.moods);
+        predictInput('.subview[data-page=style] .filterKey', bigList.styles);
+    });
 }
 
 function submitFilter() {

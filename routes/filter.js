@@ -1,8 +1,12 @@
 var express = require('express');
 var router = express.Router();
+var moment = require('moment');
+var locks = GLOBAL.db.get('locks');
+var async = require('async');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
+var freq = 60;
 
 GLOBAL.filterData = {
     target: {
@@ -166,6 +170,7 @@ router.get('/filter/add/:sid/:filter/:value', require('../user/isAuthenticated')
                 break;
             }
         }
+        if (type != 'invalid') break;
     }
     if (type == 'invalid') return res.end("-1");
     if (GLOBAL.filterData[type].replace) {
@@ -183,20 +188,102 @@ router.get('/filter/add/:sid/:filter/:value', require('../user/isAuthenticated')
         value: req.params.value
     });
     
-    //console.log(GLOBAL.parseFilters(curFilters));
     req.user.save(function() {
         if (req.user.lastStation == req.params.sid) {
-            var filters = GLOBAL.parseFilters(curFilters);
-            filters.session_id = curFilters.playlist;
-            echo('playlist/dynamic/steer').get(filters, function() {
-                res.end(index+""); //TODO: Make this a JSON object
-            });
+            var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
+            if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
+                var filters = GLOBAL.parseFilters(curFilters);
+                filters.session_id = req.user.stations[req.params.sid].playlist;
+                echo('playlist/dynamic/steer').get(filters, function() {
+                    res.end(index+""); //TODO: Make this a JSON object
+                });
+            } else res.end(index+"");
         } else res.end(index+"");
     });
 });
 
+router.get('/filter/clear/:sid', require('../user/isAuthenticated'), function(req, res) {
+    var curFilters = req.user.stations[req.params.sid].filters;
+    req.user.stations[req.params.sid].filters = [];
+    req.user.save(function() {
+        if (req.user.lastStation == req.params.sid) {
+            var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
+            if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
+                var filters = GLOBAL.parseFilters(curFilters);
+                filters.session_id = req.user.stations[req.params.sid].playlist;
+                echo('playlist/dynamic/steer').get(filters, function() {
+                    res.end("1"); //TODO: Make this a JSON object
+                });
+            } else res.end("1");
+        } else res.end("1");
+    });
+});
+
 router.get('/filter/remove/:sid/:kid', require('../user/isAuthenticated'), function(req, res) {
-    
+    var curFilters = req.user.stations[req.params.sid].filters;
+    var foundFilter = false;
+    for (var f in curFilters) {
+        if (curFilters[f].index == req.params.kid) {
+            curFilters.splice(req.params.kid, 1);
+            foundFilter = true;
+            break;
+        }
+    }
+    if (!foundFilter) return res.end("0");
+    for (var f in curFilters) {
+        if (curFilters[f].index >= req.params.kid)
+            curFilters[f].index--;
+    }
+    req.user.save(function() {
+        if (req.user.lastStation == req.params.sid) {
+            var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
+            if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
+                var filters = GLOBAL.parseFilters(curFilters);
+                filters.session_id = req.user.stations[req.params.sid].playlist;
+                echo('playlist/dynamic/steer').get(filters, function() {
+                    res.end("1"); //TODO: Make this a JSON object
+                });
+            } else res.end("1");
+        } else res.end("1");
+    });
+});
+
+router.get('/filter/choices', function(req, res) {
+    async.parallel([
+        function(next) {
+            locks.findOne({
+                name: 'moods'
+            }, {}, function(moods) {
+                var noMoods = typeof moods === 'undefined' || moods === null;
+                if (noMoods || moment(moods.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
+                    GLOBAL.updateList('moods', noMoods ? [] : moods, function(list) {
+                        next(null, list);
+                    });
+                } else {
+                    next(null, moods.list);
+                }
+            });
+        },
+        function(next) {
+            locks.findOne({
+                name: 'styles'
+            }, {}, function(styles) {
+                var noStyles = typeof styles === 'undefined' || styles === null;
+                if (noStyles || moment(styles.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
+                    GLOBAL.updateList('styles', noStyles ? [] : styles, function(list) {
+                        next(null, list);
+                    });
+                } else {
+                    next(null, styles.list);
+                }
+            });
+        }
+    ], function(err, data) {
+        res.end(JSON.stringify({
+            moods: data[0],
+            styles: data[1]
+        }));
+    });
 });
 
 router.get('/filter/list/:sid', require('../user/isAuthenticated'), function(req, res) {
