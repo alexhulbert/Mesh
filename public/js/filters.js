@@ -6,16 +6,29 @@ var bigList = {
     styles: []
 };
 
+function removeFilter() {
+    $('#manage > *:not(:first-child)').out(function(e) {
+        $(e).remove();
+    });
+    $.ajax(base + '/filter/remove/' + filterIndex + '/' + $(this).parent().data('index')).done(function() {
+        refreshFilters(filterIndex);
+    });
+}
+
 function refreshFilters(index) {
     $.ajax(base + '/filter/list/' + index).done(function(filterStr) {
         var filters = JSON.parse(filterStr);
-        $('#manage').empty();
+        $('#manage > *:not(:first-child)').remove();
         for (var f in filters) {
             var filter = filters[f];
             $('<div><div>')
                 .addClass('filterItem')
-                .data(filter)
-                .append('<div class="deleteFilter"></div>')
+                .data('index', filter.index)
+                .append(
+                    $('<div></div>')
+                        .addClass('deleteFilter clickable circular')
+                        .click(removeFilter)
+                )
                 .append(
                     $('<div></div>')
                         .addClass('filterDesc')
@@ -23,6 +36,7 @@ function refreshFilters(index) {
                 )
                 .appendTo('#manage')
             ;
+            theme.recolor(color, $('body').hasClass('light'));
         }
     });
 }
@@ -35,7 +49,7 @@ function predictInput(selector, tokens) {
             $(this).next().val(ui.item.id);
         },
         change: function(ev, ui) {
-            if (!ui.item) $(this).val($('.ui-menu-item:first-child').text() || "");
+            if (!ui.item) $(this).val($(this).closest('.ui-menu-item:first-child').text() || "");
         }
     }).focus(function() {
         var el = $(this);
@@ -48,7 +62,7 @@ function predictInput(selector, tokens) {
 
 function filterStation(index) {
     filterIndex = index;
-    showFilter('main');
+    showFilter('manage');
 }
 
 function showFilter(type, opt) {
@@ -56,7 +70,7 @@ function showFilter(type, opt) {
     if (!tempFilter.length && type == 'filter') return;
     currentFilter.out();
     if (currentFilter.hasClass('subview'))
-        $('#filterView .circledButton').out();
+        $('#filterView .cBtn').out();
     switch(type) {
         case 'filter':
             currentFilter = tempFilter;
@@ -65,22 +79,20 @@ function showFilter(type, opt) {
             currentFilter = $('#stationList');
         break;
         case 'manage':
+            refreshFilters(filterIndex);
             currentFilter = $('#manage');
         break;
         case 'main':
             currentFilter = $('#filterMenu');
         break;
     }
-    if (!currentFilter)
-    if (type == 'filter') $('#filterView .circledButton').in();
+    if (type == 'filter') $('#filterView .cBtn').in();
     currentFilter.in();
     if (opt === true) {
         $('#filterView').in();
         vex.dialog.alert(
-            'IMPORTANT: There is currently no way to delete existing filters. ' + 
-            'Filters have been disabled on this server (Server β). ' +
-            'Although you can browse them, they will currenly do nothing. ' +
-            'Filters should be stable enough to be enabled before June 1st.'
+            'IMPORTANT: Filters are currently not production-ready.\n' +
+            'They may cause serious problems or bugs, so proceed with caution.'
         );
     }
 }
@@ -107,10 +119,12 @@ function initFilters() {
         curPage = pageName;
         showFilter('filter', pageName);
     });
-    $('#filterView .minus, .circledButton.left').click(function() {
+    $('#filterView .minus, #cLeft').click(function() {
         if (currentFilter.hasClass('subview'))
             return showFilter('main');
         if (currentFilter.attr('id') == 'filterMenu')
+            return showFilter('manage');
+        if (currentFilter.attr('id') == 'manage')
             return showFilter('station');
         $('#filterView').out();
     });
@@ -136,12 +150,14 @@ function initFilters() {
 
     $.ajax(base + '/filter/choices').done(function(choices) {
         bigList = JSON.parse(choices);
-        //TODO: predictInput('.subview[data-page=mood] .filterKey', bigList.moods);
+        predictInput('.subview[data-page=mood] .filterKey', bigList.moods);
         predictInput('.subview[data-page=style] .filterKey', bigList.styles);
     });
 }
 
 function submitFilter() {
+    if (locked) return;
+    var isValid = true;
     var str = base + '/filter/add/' + filterIndex + '/';
     switch(curPage) {
         case 'general':
@@ -157,6 +173,25 @@ function submitFilter() {
         case 'tempo':
             
         break;
+        case 'style':
+            str += $('.subview[data-page=style] .filterKey').val() || 'acid jazz';
+            str += '/';
+            str += $('.subview[data-page=style] .filterVal option:checked').attr('value') || 'G+';
+        break;
+        case 'mood':
+            str += $('.subview[data-page=mood] .filterKey').val() || 'aggressive';
+            str += '/';
+            str += $('.subview[data-page=mood] .filterVal option:checked').attr('value') || 'M+';
+        break;
+        default:
+            isValid = false;
+        break;
     }
-    console.log(str);
+    if (isValid) {
+        lock();
+        $.ajax(str).done(function() {
+            showFilter('manage');
+            unlock();
+        });
+    }
 }

@@ -21,10 +21,10 @@
     cursor pointer
     font-family inherit
     font-size 3em
-#backminus::after
+#backminus::before
   content '\e603'
 #filterView
-  > div:not(.circledButton):not(.minus)
+  > div:not(.circular)
     position absolute !important
     bottom 0
     height 70vh
@@ -71,38 +71,47 @@
         background rgba(0, 0, 0, 0.3)
       &:active
         background rgba(0, 0, 0, 0.45)
-  .circledButton
+  .cBtn
     z-index 3
     display none
     cursor pointer
     bottom 0
-    width 7rem
-    height 7rem
     top 66%
     margin auto
-    border-radius 50%
-    line-height 7rem
-    font-size 5em
-    text-align center
-    border 3px solid
+    font-size 7rem
     position fixed
-    &.left
-      left 0
-      right 15%
-    &.right
-      right 0
-      left 15%
+  #cLeft
+    left 0
+    right 15%
+    &::before
+      content '\e603'
+      font-size 0.8em
+      line-height 7rem
+  #cRight
+    right 0
+    left 15%
+    &::before
+      content '\e601'
+      font-size 0.7em
+      line-height 7rem
   #manage
     .filterItem
       font-size 3em
+      height 2em
       margin 1em
       .deleteFilter
-        width 2em
-        height 2em
+        font-size 2em
         float left
+        position absolute
+        &::before
+          content '\e600'
+          font-size 0.7em
+          line-height 6rem
       .filterDesc
         float left
-        margin 0.5em 0 0 0.5em
+        margin 0.5em 0 0 2.75em
+      .addFilter::before
+        content '\e602'
   #stationList
     font-size 2em
     .circleCard

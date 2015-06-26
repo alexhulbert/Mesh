@@ -12,11 +12,15 @@ subtract(a, b)
   
 //For CSS3/Browser-prefixed properties
 vendor(prop, args)
-  -webkit-{prop} args
-  -moz-{prop} args
-  -o-{prop} args
-  {prop} args
-
+  if args is a 'string'
+    arg = s(args);
+  else
+    arg = args;
+  -webkit-{prop} arg
+  -moz-{prop} arg
+  -o-{prop} arg
+  {prop} arg
+  
 //This monster is an automated positioning script
 pos(x, y, align = auto, w = 0, h = 0)
   position absolute

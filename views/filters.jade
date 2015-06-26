@@ -1,8 +1,12 @@
 #filterView.view
-  #backminus.minus.clickable
+  #backminus.minus.clickable.circular
   h2#filterTitle Please Choose a Filter to Apply
   #stationList
   #manage
+    .filterItem
+      .deleteFilter.clickable.circular.addFilter(onclick='showFilter("main")')
+      .filterDesc
+        b Add a new filter to this station
   #types
     .filterChoice(data-page='general')
       h3 Filter what kind of music is played
@@ -12,7 +16,7 @@
       p Choose a specific song and use it to influence your station
     .filterChoice(data-page='tertiary')
       h3 Only Play Certain Types of Music
-      p Limit your music to types of music such as christmas, childrens, or studio
+      p Limit your station to to only certain type of music such as christmas, live, or studio
     .filterChoice(data-page='time')
       h3 Limit When the Music was Created
       p Filter the birth/death date of artists or when their songs were created
@@ -59,7 +63,7 @@
         option(value='acoustic') acoustic
         option(value='electric') electric
         option(value='studio') studio
-        option(value='childrens') childrens'
+        //option(value='childrens') childrens'
         option(value='instrumental') instrumental
         option(value='vocal') vocal
       | &nbsp;music 
@@ -76,10 +80,19 @@
     .formarea
       | I want&nbsp;
       select.filterVal
-        option(value="+") more
-        option(value="-") less
+        option(value="G+") more
+        option(value="G-") less
       | &nbsp;music with roots in&nbsp;
-      input.filterKey(type='text', placeholder='Acid Jazz', data-subline='Full list of genres available <a><u>here</u></a>')
+      input.filterKey(type='text', placeholder='acid jazz', data-subline='Full list of genres available <a><u>here</u></a>')
     .nl-overlay
-  .circledButton.left  &#xe600;
-  .circledButton.right &#xe601;
+  .subview.nl-form(data-page='mood')
+    .formarea
+      | I want music that is&nbsp;
+      select.filterVal
+        option(value="M+") more
+        option(value="M-") less
+      | &nbsp;
+      input.filterKey(type='text', placeholder='aggressive', data-subline='Using more than one mood per station may cause undesired results')
+    .nl-overlay
+  #cLeft.cBtn.clickable.circular
+  #cRight.cBtn.clickable.circular(onclick='submitFilter();')

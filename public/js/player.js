@@ -73,13 +73,14 @@ Mousetrap.bind('ctrl+shift+/', bugReport);
 vex.defaultOptions.className = 'vex-theme-flat-attack';
 $.fn.extend({
     in: function() {
-        $(this)
+        return $(this)
             .show(0)
             .animate({opacity: 1}, 350)
         ;
+        return this;
     },
     out: function() {
-        $(this)
+        return $(this)
             .animate({opacity: 0}, 350)
             .delay(350)
             .hide(0)
@@ -143,33 +144,45 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         ecode = e.currentTarget.error.code;
     else if (e.path)
         ecode = e.path[0].error.code;
-    if (ecode == 4) {
-        console.log("ERROR LOADING SONG!", e);
-        var preloading = !!music().audio.currentTime;
-        //Remove Song current song if no Preload, remove next song if preload
-        if (!preloading || curSong != songs.length - 1) {
-            $('.song').filter(function() {
-                return $('> div', this).attr('data-index') == (curSong + preloading);
-            }).remove();
-        }
-        songs.splice(curSong + preloading, 1);
-        //Now curSong is next/correct song
-        
-        //Shift index of each song to match songs[]
-        $('#song .container > div > div')
-            .each(function() {
-                var e = $(this);
-                if (parseInt(e.attr('data-index')) > curSong) {
-                    var newIndex = parseInt(e.attr('data-index')) - 1;
-                    e.attr('data-index', newIndex);
-                    var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
-                    e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
-                }
-            })
-        ;
-        
-        if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
-    } else console.log("UNHANDLED SONG ERROR!", e.path[0].error);
+    switch (ecode) {
+        case 4:
+            console.log("ERROR LOADING SONG!", e);
+            var preloading = !!music().audio.currentTime;
+            //Remove Song current song if no Preload, remove next song if preload
+            if (!preloading || curSong != songs.length - 1) {
+                $('.song').filter(function() {
+                    return $('> div', this).attr('data-index') == (curSong + preloading);
+                }).remove();
+            }
+            songs.splice(curSong + preloading, 1);
+            //Now curSong is next/correct song
+            
+            //Shift index of each song to match songs[]
+            $('#song .container > div > div')
+                .each(function() {
+                    var e = $(this);
+                    if (parseInt(e.attr('data-index')) > curSong) {
+                        var newIndex = parseInt(e.attr('data-index')) - 1;
+                        e.attr('data-index', newIndex);
+                        var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
+                        e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
+                    }
+                })
+            ;
+            
+            if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
+        break;
+        case 2:
+            console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
+            var resumeLength = e.path[0].currentTime;
+            music().audio.load();
+            music.audio.currentTime = resumeLength;
+            music().audio.play();
+        break;
+        default:
+            console.log("UNHANDLED SONG ERROR!", e.path[0].error);
+        break;
+    }
 };
 
 function encodeForURI(input) {
@@ -470,17 +483,17 @@ function updateUI(data, onlyColor) {
     color = data.color;
     if (color[0] === null) color[0] = 0;
     if (data.dark) {
-        $('body').addClass('light').removeClass('dark');
         light = false;
-        fill = "#DDD";
-        hoverFill = "#999";
-        pressFill = "#FFF";
+        $('body').addClass('light').removeClass('dark');
+        fill = "#FFF";
+        hoverFill = "#BBB";
+        pressFill = "#888";
     } else {
         light = true;
         $('body').addClass('dark').removeClass('light');
-        fill = "#222";
-        hoverFill = "#666";
-        pressFill = "#000";
+        fill = "#000";
+        hoverFill = "#444";
+        pressFill = "#555";
     }
     var icons = $('.icon').contents();
     for (var i = 0; i < icons.length; i++) {
@@ -669,7 +682,7 @@ function pause() {
 }
 
 function appendStation(station) {
-    var elem = $('<div class="station"><span class="left" onclick="deleteStation($(this).parent().data(\'id\'), event);"></span><div></div></div>')
+    var elem = $('<div class="station"><span class="left circular" data-bri="25" onclick="deleteStation($(this).parent().data(\'id\'), event);"></span><div></div></div>')
         .attr('title', station.name)
         .css('background-image', 'url(' + station.image + ')')
         .data('id', station.id)

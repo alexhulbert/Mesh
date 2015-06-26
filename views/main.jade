@@ -55,8 +55,7 @@ block content
     //+icon('download', 'download')
     #stat
       .container
-        .add.station(onclick='showSearch("bootstrap");', data-id='-1')
-          div &#xe602;
+        .add.station.circular(onclick='showSearch("bootstrap");', data-id='-1', data-bri="25")
       #scUp
       #scDown
     #song
@@ -66,7 +65,7 @@ block content
           span
             span
   #searchView.view
-    .minus.clickable
+    .minus.clickable.circular
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style="margin-top: -1em")
@@ -90,4 +89,4 @@ block content
       span.cap  Built Using
       br
       span.name The Echonest
-    #version v0.8.1 "Apollo"
+    #version v0.8.4b "Saraswati"

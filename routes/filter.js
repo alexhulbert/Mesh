@@ -8,6 +8,44 @@ var echo = require('echojs')({
 });
 var freq = 60;
 
+GLOBAL.getChoices = function(cb) {
+    async.parallel([
+        function(next) {
+            locks.findOne({
+                name: 'moods'
+            }, {}, function(moods) {
+                var noMoods = typeof moods === 'undefined' || moods === null;
+                if (noMoods || moment(moods.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
+                    GLOBAL.updateList('moods', noMoods ? [] : moods, function(list) {
+                        next(null, list);
+                    });
+                } else {
+                    next(null, moods.list);
+                }
+            });
+        },
+        function(next) {
+            locks.findOne({
+                name: 'styles'
+            }, {}, function(styles) {
+                var noStyles = typeof styles === 'undefined' || styles === null;
+                if (noStyles || moment(styles.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
+                    GLOBAL.updateList('styles', noStyles ? [] : styles, function(list) {
+                        next(null, list);
+                    });
+                } else {
+                    next(null, styles.list);
+                }
+            });
+        }
+    ], function(err, data) {
+        cb({
+            moods: data[0],
+            styles: data[1]
+        });
+    });
+}
+
 GLOBAL.filterData = {
     target: {
         valueRegex: /^([+-])\1?$/,
@@ -21,7 +59,8 @@ GLOBAL.filterData = {
             vocal: 'speechiness',
             acoustic: 'acousticness',
             popular: 'song_hotttnesss',
-            familiar: 'artist_familiarity'
+            familiar: 'artist_familiarity',
+            current: 'song_currency'
         },
         defaults: {
             loud: {
@@ -52,7 +91,7 @@ GLOBAL.filterData = {
             studio: 'studio',
             acoustic: 'acoustic',
             electric: 'electric',
-            childrens: 'childrens',
+            //childrens: 'childrens',
             instrumental: 'instrumental',
             vocal: 'vocal'
         }
@@ -76,11 +115,27 @@ GLOBAL.filterData = {
         keys: {
             'tempo': 'tempo'
         }
+    },
+    mood: {
+        valueRegex: /^M[+-]$/,
+        replace: false,
+        domain: 'steer',
+        keys: 'moods'
+    },
+    style: {
+        valueRegex: /^G[+-]$/,
+        replace: false,
+        domain: 'steer',
+        keys: 'styles'
     }
 };
 
 GLOBAL.parseFilters = function(filters) {
     var finalData = {};
+    var otherData = {
+        mood: {},
+        style: {}
+    };
     for (var index in filters) {
         var thisFilter = filters[index];
         var key = thisFilter.key;
@@ -150,55 +205,86 @@ GLOBAL.parseFilters = function(filters) {
                 finalData['min_tempo'] = parseFloat(thisFilter.value.split(':')[0]);
                 finalData['max_tempo'] = parseFloat(thisFilter.value.split(':')[1]);
             break;
+            case 'mood':
+            case 'style':
+                var data = otherData[thisFilter.type];
+                var baseNum;
+                if (typeof data[thisFilter.key] === 'undefined')
+                    baseNum = 1;
+                else
+                    baseNum = data[thisFilter.key];
+                if (thisFilter.value == "G+")
+                    baseNum *= 1.25;
+                else
+                    baseNum /= 1.25;
+                data[thisFilter.key] = baseNum;
+            break;
+        }
+    }
+    for (var t in otherData) {
+        var oData = otherData[t];
+        if (Object.keys(oData).length !== 0) {
+            finalData[t] = '';
+            for (var k in oData) {
+                finalData[t] += ', ' + k + '^' + oData[k];
+            }
+            finalData[t] = finalData[t].slice(2);
         }
     }
     return finalData;
 };
 
 router.get('/filter/add/:sid/:filter/:value', require('../user/isAuthenticated'), function(req, res) {
-    var curFilters = req.user.stations[req.params.sid].filters;
-    var type = 'invalid';
-    for (var fKey in GLOBAL.filterData) {
-        var fData = GLOBAL.filterData[fKey];
-        if (typeof fData.valueRegex === 'function')
-            if (!fData.valueRegex(req.params.value)) continue;
-        else
-            if (!req.params.value.match(fData.valueRegex)) continue;
-        for (var shortKey in fData.keys) {
-            if (req.params.filter == shortKey) {
-                type = fKey;
-                break;
+    GLOBAL.getChoices(function(keyList) {
+        var curFilters = req.user.stations[req.params.sid].filters;
+        var type = 'invalid';
+        for (var fKey in GLOBAL.filterData) {
+            var fData = GLOBAL.filterData[fKey];
+            if (typeof fData.valueRegex === 'function')
+                if (!fData.valueRegex(req.params.value)) continue;
+            else
+                if (!req.params.value.match(fData.valueRegex)) continue;
+            var validKeys;
+            if (typeof fData.keys === 'string')
+                validKeys = keyList[fData.keys];
+            else
+                validKeys = Object.keys(fData.keys);
+            for (var i in validKeys) {
+                if (req.params.filter == validKeys[i]) {
+                    type = fKey;
+                    break;
+                }
+            }
+            if (type != 'invalid') break;
+        }
+        if (type == 'invalid') return res.end("-1");
+        if (GLOBAL.filterData[type].replace) {
+            for (var i = curFilters.length - 1; i >= 0; i--) {
+                if (curFilters[i].type == type) {
+                    curFilters.splice(i, 1);
+                }
             }
         }
-        if (type != 'invalid') break;
-    }
-    if (type == 'invalid') return res.end("-1");
-    if (GLOBAL.filterData[type].replace) {
-        for (var i = curFilters.length - 1; i >= 0; i--) {
-            if (curFilters[i].type == type) {
-                curFilters.splice(i, 1);
-            }
-        }
-    }
-    var index = curFilters.length;
-    curFilters.push({
-        index: index,
-        type: type,
-        key: req.params.filter,
-        value: req.params.value
-    });
-    
-    req.user.save(function() {
-        if (req.user.lastStation == req.params.sid) {
-            var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
-            if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
-                var filters = GLOBAL.parseFilters(curFilters);
-                filters.session_id = req.user.stations[req.params.sid].playlist;
-                echo('playlist/dynamic/steer').get(filters, function() {
-                    res.end(index+""); //TODO: Make this a JSON object
-                });
+        var index = curFilters.length;
+        curFilters.push({
+            index: index,
+            type: type,
+            key: req.params.filter,
+            value: req.params.value
+        });
+        
+        req.user.save(function() {
+            if (req.user.lastStation == req.params.sid) {
+                var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
+                if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
+                    var filters = GLOBAL.parseFilters(curFilters);
+                    filters.session_id = req.user.stations[req.params.sid].playlist;
+                    echo('playlist/dynamic/steer').get(filters, function() {
+                        res.end(index+""); //TODO: Make this a JSON object
+                    });
+                } else res.end(index+"");
             } else res.end(index+"");
-        } else res.end(index+"");
+        });
     });
 });
 
@@ -249,40 +335,8 @@ router.get('/filter/remove/:sid/:kid', require('../user/isAuthenticated'), funct
 });
 
 router.get('/filter/choices', function(req, res) {
-    async.parallel([
-        function(next) {
-            locks.findOne({
-                name: 'moods'
-            }, {}, function(moods) {
-                var noMoods = typeof moods === 'undefined' || moods === null;
-                if (noMoods || moment(moods.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
-                    GLOBAL.updateList('moods', noMoods ? [] : moods, function(list) {
-                        next(null, list);
-                    });
-                } else {
-                    next(null, moods.list);
-                }
-            });
-        },
-        function(next) {
-            locks.findOne({
-                name: 'styles'
-            }, {}, function(styles) {
-                var noStyles = typeof styles === 'undefined' || styles === null;
-                if (noStyles || moment(styles.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq)) {
-                    GLOBAL.updateList('styles', noStyles ? [] : styles, function(list) {
-                        next(null, list);
-                    });
-                } else {
-                    next(null, styles.list);
-                }
-            });
-        }
-    ], function(err, data) {
-        res.end(JSON.stringify({
-            moods: data[0],
-            styles: data[1]
-        }));
+    GLOBAL.getChoices(function(keyList) {
+        res.end(JSON.stringify(keyList));
     });
 });
 
@@ -294,7 +348,7 @@ router.get('/filter/list/:sid', require('../user/isAuthenticated'), function(req
         filterInfo.desc = 'Your station ';
         switch(filterInfo.type) {
             case 'target':
-                filterInfo.desc += 'is ';
+                filterInfo.desc += 'will be ';
                 if (filterInfo.value.length == 2)
                     filterInfo.desc += 'much ';
                 if (filterInfo.value.slice(-1) == '-')
@@ -328,6 +382,23 @@ router.get('/filter/list/:sid', require('../user/isAuthenticated'), function(req
                 filterInfo.desc += filterInfo.value.split(':')[1];
                 filterInfo.desc += ' BPM.';
             break;
+            case 'style':
+                filterInfo.desc += 'will play ';
+                if (filterInfo.value == 'G+')
+                    filterInfo.desc += 'more ';
+                else
+                    filterInfo.desc += 'less ';
+                filterInfo.desc += filterInfo.key;
+                filterInfo.desc += '-influenced music.';
+            break;
+            case 'mood':
+                filterInfo.desc += 'will play music that is ';
+                if (filterInfo.value == 'M+')
+                    filterInfo.desc += 'more ';
+                else
+                    filterInfo.desc += 'less ';
+                filterInfo.desc += filterInfo.key;
+                filterInfo.desc += '.';
         }
         data.push(filterInfo);
     });

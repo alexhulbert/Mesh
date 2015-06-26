@@ -113,7 +113,7 @@ var stationUnload = function(req, res, doDelete) {
             req.user.stations[req.params.sid].lastUpdated = "";
             req.user.save(function() {
                 res.end();
-            })
+            });
         }
     });
 };

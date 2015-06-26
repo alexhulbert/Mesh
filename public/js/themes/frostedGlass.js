@@ -2,6 +2,28 @@ var ratio = 0;
 var hasAlbum = false;
 theme = {
     "sidebar": function(mode) { /* Runs when the sidebar is opened/closed*/ },
+    "recolor": function(color, dark) {
+        $('.circular')
+            .each(function(i, elem) {
+                var e = $(elem);
+                var briParam = parseInt(e.data('bri')) || 0;
+                var fadedHsl =
+                    color[0] + ',' +
+                    color[1] + ',' +
+                    Math.min(color[2] + (dark ? -1 : 1)*briParam, 100) + '%'
+                ; //Setting the color based on data-bri parameter
+                if (e.is(':hover')) e.css('color', 'hsl(' + fadedHsl + ')');
+                e
+                    .mouseover(function(self) {
+                        $(self.target).css('color', 'hsl(' + fadedHsl + ')');
+                    }) //Set Color to Theme Color on mouse over
+                ;
+            }) //Change color on mouse over
+            .mouseout(function(self) {
+                $(self.target).css('color', '');
+            }) //Revert circle buttons on mouse exit
+        ;
+    },
     "draw": function(data) {
         //data.dark means the UI (and not the text) is dark
         //body.dark (the class) means the font is dark
@@ -36,8 +58,13 @@ theme = {
             'background-color': 'hsl(' + hsl + ')'
         }); //Setting foreground color on progbar/search view
         
+        theme.recolor(data.color, data.dark);
+        
         $('.sidr .container').css({
-            'background-color': 'hsla(' + hsl + ',0.675)'
+            'background-color': 'hsl(' +
+                data.color[0] + ',' +
+                data.color[1] + ',' +
+                Math.min(data.color[2] + (data.dark ? -25 : 25), 100) + '%)'
         }); //Coloring the sidebar
         
         var colorA =
@@ -58,7 +85,6 @@ theme = {
             'color': colorDarker,
             'border-bottom': '1px dashed ' + colorDarker
         });
-        
         
         var str = data.songName + '<br>' + data.artistName;
         if (data.albumName !== null) str += ' - ' + data.albumName;
