@@ -102,14 +102,18 @@
       .deleteFilter
         font-size 2em
         float left
-        position absolute
+        position relative
         &::before
           content '\e600'
           font-size 0.7em
           line-height 6rem
+        &:hover + .filterDesc
+          opacity 1
       .filterDesc
         float left
-        margin 0.5em 0 0 2.75em
+        margin 0.5em 0 0 0.75em
+        vendor(transition, opacity 200ms)
+        opacity 0.8
       .addFilter::before
         content '\e602'
   #stationList

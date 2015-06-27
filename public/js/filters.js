@@ -7,7 +7,7 @@ var bigList = {
 };
 
 function removeFilter() {
-    $('#manage > *:not(:first-child)').out(function(e) {
+    $('#manageView > *:not(:first-child)').out(function(e) {
         $(e).remove();
     });
     $.ajax(base + '/filter/remove/' + filterIndex + '/' + $(this).parent().data('index')).done(function() {
@@ -18,7 +18,7 @@ function removeFilter() {
 function refreshFilters(index) {
     $.ajax(base + '/filter/list/' + index).done(function(filterStr) {
         var filters = JSON.parse(filterStr);
-        $('#manage > *:not(:first-child)').remove();
+        $('#manageView > *:not(:first-child)').remove();
         for (var f in filters) {
             var filter = filters[f];
             $('<div><div>')
@@ -34,7 +34,7 @@ function refreshFilters(index) {
                         .addClass('filterDesc')
                         .text(filter.desc)
                 )
-                .appendTo('#manage')
+                .insertAfter('#manageView > div:first-child')
             ;
             theme.recolor(color, $('body').hasClass('light'));
         }
@@ -98,7 +98,7 @@ function showFilter(type, opt) {
 }
 
 function initFilters() {
-    $('#types').slimScroll({
+    var slimParams = {
         size: '1em',
         position: 'right',
         width: '100%',
@@ -109,7 +109,9 @@ function initFilters() {
         railBorderRadius: '0',
         borderRadius: '0',
         height: '70vh'
-    }).parent().attr('id', 'filterMenu');
+    };
+    $('#types').slimScroll(slimParams).parent().attr('id', 'filterMenu');
+    $('#manageView').slimScroll(slimParams).parent().attr('id', 'manage');
     $('.nl-form').each(function() {
         new NLForm(this);
     });
