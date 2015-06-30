@@ -66,6 +66,7 @@ function filterStation(index) {
 }
 
 function showFilter(type, opt) {
+    var completedFilter = !currentFilter.hasClass('incomplete');
     var tempFilter = $('.subview[data-page=' + opt + ']');
     if (!tempFilter.length && type == 'filter') return;
     currentFilter.out();
@@ -86,7 +87,7 @@ function showFilter(type, opt) {
             currentFilter = $('#filterMenu');
         break;
     }
-    if (type == 'filter') $('#filterView .cBtn').in();
+    if (type == 'filter' && completedFilter) $('#filterView .cBtn').in();
     currentFilter.in();
     if (opt === true) {
         $('#filterView').in();
@@ -130,25 +131,19 @@ function initFilters() {
             return showFilter('station');
         $('#filterView').out();
     });
-    
-    var generalMap = {
-        acoustic: 'acousticness',
-        danceable: 'danceability',
-		energetic: 'energy',
-		instrumental: 'instrumentalness',
-		live: 'liveness',
-		loud: 'loudness',
-		current: 'song_currency',
-		varied: 'variety',
-		vocal: 'speechiness',
-		uplifting: 'valance',
-		familiar: 'artist_familiarity',
-		popular: 'artist_hotness', //!!!
-	};
-	var generalKeys = [];
-	for (var adjective in generalMap)
-		generalKeys.push(adjective);
-	predictInput('.subview[data-page=general] .filterKey', generalKeys);
+	predictInput('.subview[data-page=general] .filterKey', [
+        'acoustic',
+        'danceable',
+		'energetic',
+		'instrumental',
+		'live',
+		'loud',
+		'current',
+		'vocal',
+		'uplifting',
+		'familiar',
+		'popular'
+	]);
 
     $.ajax(base + '/filter/choices').done(function(choices) {
         bigList = JSON.parse(choices);

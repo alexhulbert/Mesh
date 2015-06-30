@@ -60,7 +60,9 @@ GLOBAL.filterData = {
             acoustic: 'acousticness',
             popular: 'song_hotttnesss',
             familiar: 'artist_familiarity',
-            current: 'song_currency'
+            current: 'song_currency',
+            uplifting: 'valence',
+            instrumental: 'instrumentalness'
         },
         defaults: {
             loud: {
@@ -213,7 +215,7 @@ GLOBAL.parseFilters = function(filters) {
                     baseNum = 1;
                 else
                     baseNum = data[thisFilter.key];
-                if (thisFilter.value == "G+")
+                if (thisFilter.value.slice(-1) == "+")
                     baseNum *= 1.25;
                 else
                     baseNum /= 1.25;
@@ -224,11 +226,9 @@ GLOBAL.parseFilters = function(filters) {
     for (var t in otherData) {
         var oData = otherData[t];
         if (Object.keys(oData).length !== 0) {
-            finalData[t] = '';
-            for (var k in oData) {
-                finalData[t] += ', ' + k + '^' + oData[k];
-            }
-            finalData[t] = finalData[t].slice(2);
+            finalData[t] = [];
+            for (var k in oData)
+                finalData[t].push(k + '^' + oData[k]);
         }
     }
     return finalData;

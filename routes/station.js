@@ -33,48 +33,62 @@ var stationLoad = function(req, res) {
         },
         function(next) {
             req.user.lastStation = req.params.sid;
-            echo('playlist/dynamic/create').get({
+            var playlistParams = {
                 seed_catalog: req.user.stations[req.params.sid].id,
                 type: 'catalog-radio',
                 session_catalog: req.user.stations[req.params.sid].id,
                 distribution: 'wandering',
                 adventurousness: 0.5,
                 limited_interactivity: true
-            }, function(err, json) {
+            };
+            var remainingParams = {};
+            var filters = GLOBAL.parseFilters(req.user.stations[req.params.sid].filters);
+            for (var i in filters) {
+                if (!i.match(/mood|style|description/)) {
+                    playlistParams[i] = filters[i];
+                } else {
+                    remainingParams[i] = filters[i];
+                }
+            }
+            echo('playlist/dynamic/create').get(playlistParams, function(err, json) {
                 req.user.stations[req.params.sid].playlist = json.response.session_id;
                 req.user.markModified('stations');
                 req.user.save(function() {
-                    next(null, json.response.session_id);
+                    next(null, json.response.session_id, filters);
                 });
             });
         },
-        function(sessid, next) {
-            var filters = GLOBAL.parseFilters(req.user.stations[req.params.sid].filters);
-            filters.session_id = sessid;
-            echo('playlist/dynamic/steer').get(filters, function(err, json) {
-                var recentlyPlayed = [];
-                if (req.user.stations[req.params.sid].recentlyPlayed) {
-                    for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
-                        recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
-                    }
-                }
-                if (req.user.recent) {
-                    for (var i = 0; i < req.user.recent.length; i+= 16) {
-                        var recentSong = req.user.recent.slice(i, i+16);
-                        if (~recentlyPlayed.indexOf(recentSong))
-                            recentlyPlayed.splice(recentlyPlayed.indexOf(recentSong), 1);
-                        recentlyPlayed.push(recentSong);
-                    }
-                }
-                if (recentlyPlayed.length) recentlyPlayed.splice(0, 0, '');
-                
-                var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
-                           + process.env.ECHONEST_KEY + '&session_id=' + sessid
-                           + recentlyPlayed.join('&invalidate_song=SO')
-                ;
-                request(reqStr, function(err, resp, body) {
-                    res.end(sessid);
+        function(sessid, filters, next) {
+            if (Object.getOwnPropertyNames(filters).length !== 0) {
+                filters.session_id = sessid;
+                echo('playlist/dynamic/steer').get(filters, function(err, json) {
+                    next(null, sessid);
                 });
+            } else next(null, sessid);
+        },
+        function(sessid, next) {
+            var recentlyPlayed = [];
+            if (req.user.stations[req.params.sid].recentlyPlayed) {
+                for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
+                    recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
+                }
+            }
+            if (req.user.recent) {
+                for (var i = 0; i < req.user.recent.length; i+= 16) {
+                    var recentSong = req.user.recent.slice(i, i+16);
+                    if (~recentlyPlayed.indexOf(recentSong))
+                        recentlyPlayed.splice(recentlyPlayed.indexOf(recentSong), 1);
+                    recentlyPlayed.push(recentSong);
+                }
+            }
+            if (recentlyPlayed.length) recentlyPlayed.splice(0, 0, '');
+            
+            var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
+                       + process.env.ECHONEST_KEY + '&session_id=' + sessid
+                       + recentlyPlayed.join('&invalidate_song=SO')
+            ;
+            request(reqStr, function(err, resp, body) {
+                res.end(sessid);
             });
         }
     ]);

@@ -17,13 +17,16 @@
     .filterChoice(data-page='tertiary')
       h3 Only Play Certain Types of Music
       p Limit your station to to only certain type of music such as christmas, live, or studio
-    .filterChoice(data-page='time')
+    .filterChoice(data-page='focus').incomplete
+      h3 Discover More Music
+      p Listen to something outside your comfort zone or just stick with the familiar
+    .filterChoice(data-page='time').incomplete
       h3 Limit When the Music was Created
       p Filter the birth/death date of artists or when their songs were created
-    .filterChoice(data-page='place')
+    .filterChoice(data-page='place').incomplete
       h3 Limit Where the Music is From
       p Choose a specific region to restrict the music to
-    .filterChoice(data-page='structure')
+    .filterChoice(data-page='structure').incomplete
       h3 Filter the Musical Structure of the Music
       p Only play music with a predefined key, tempo, or mode (major/minor)
     .filterChoice(data-page='style')
@@ -32,10 +35,10 @@
     .filterChoice(data-page='mood')
       h3 Alter the Mood of Your Station
       p Use adjectives to describe the type of music you'd prefer
-    .filterChoice(data-page='length')
+    .filterChoice(data-page='length').incomplete
       h3 Restrict the length of music
       p Define a range that all songs' lengths must fall in
-    .filterChoice(data-page='freeform')
+    .filterChoice(data-page='freeform').incomplete
       h3 Freely enter keywords to steer station (beta)
       p Warning: This filter can cause stations to operate unstably
   .subview.nl-form(data-page='general')
