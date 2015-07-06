@@ -176,7 +176,7 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
             console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
             var resumeLength = e.path[0].currentTime;
             music().audio.load();
-            music.audio.currentTime = resumeLength;
+            music().audio.currentTime = resumeLength;
             music().audio.play();
         break;
         default:
