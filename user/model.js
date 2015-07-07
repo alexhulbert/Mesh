@@ -20,7 +20,8 @@ var station = mongoose.Schema({
     image: String,
     filters: [filter],
     recentlyPlayed: String,
-    lastUpdated: String
+    lastUpdated: String,
+    feedback: mongoose.Schema.Types.Mixed
 });
 
 var userSchema = mongoose.Schema({
@@ -35,10 +36,10 @@ var userSchema = mongoose.Schema({
     activated: false,
     verifyToken: String,
     elevated: false,
-    order: [String],
     recent: String,
     bookmarks: String,
-    uuid: String
+    uuid: String,
+    mostPlayed: mongoose.Schema.Types.Mixed
 });
 
 userSchema.pre('save', function(next) {

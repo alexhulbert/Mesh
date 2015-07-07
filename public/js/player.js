@@ -42,6 +42,7 @@ var likeStatus = {
 };
 var whoami = '<UNKNOWN IDENTITY>';
 var errors = [];
+var feedbackHistory = [];
 
 window.addEventListener('error', function(err) {
     if (errors.length > 50) return;
@@ -304,6 +305,7 @@ function loadStation(sid, callback) {
     }
 
     $.ajax(base + '/station/load/' + sid).done(function(data) {
+        feedbackHistory[sid] = JSON.parse(data);
         curStation = sid;
         if (doDefault) {
             isRunning = true;
@@ -555,6 +557,19 @@ function newSong(cb, skip) {
     $.ajax(base + '/grab/station/' + curStation + (audioWorkaround ? '/legacy' : '')).done(function(data) {
         //globalOverhead = 0;
         colorGen(JSON.parse(data), function(first, second) {
+            var statFeedback = feedbackHistory[curStation];
+            for (var i in statFeedback.likes) {
+                if (statFeedback.likes[i].id == first.id) {
+                    first.likeStatus = likeStatus.LIKE;
+                    break;
+                }
+            }
+            for (var i in statFeedback.dislikes) {
+                if (statFeedback.dislikes[i].id == first.id) {
+                    first.likeStatus = likeStatus.DISLIKE;
+                    break;
+                }
+            }
             cb(first);
             nextUp(second);
         });

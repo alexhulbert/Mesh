@@ -12,7 +12,7 @@ router.get('/migrate', function(req, res) {
         var log = '';
         async.each(users, function(user, next) {
             for (var s in user.stations)
-                user.stations[s].filters = [];
+                user.stations[s].index = s;
             user.markModified('stations');
             user.save(next);
         }, function() {

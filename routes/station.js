@@ -6,21 +6,50 @@ var moment = require('moment');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
+var localMax = 64;
+var topPlayedMax = 36;
+//globalMax(song.js) + localMax + topPlayedMax <= 225
 
 var stationLoad = function(req, res) {
-    if (typeof req.user.stations[req.params.sid].id === 'undefined')
-        return stationDelete(req, res);
-    
-    if (req.params.sid == req.user.lastStation) {
-        var lastUpdated = req.user.stations[req.params.sid].lastUpdated; 
+    var curStation = req.user.stations[req.params.sid];
+    if (typeof curStation.id === 'undefined') return stationDelete(req, res);
+    if (
+        req.params.sid == req.user.lastStation &&
+        typeof curStation.playlist !== 'undefined'
+    ) {
+        var lastUpdated = curStation.lastUpdated; 
         if (lastUpdated && moment().diff(moment(lastUpdated, 'x'), 'hours') < 23) {
-            return res.end(req.user.stations[req.params.sid].playlist);
+            if (curStation.feedback) {
+                return res.end(JSON.stringify({
+                    session: curStation.playlist,
+                    ratings: curStation.feedback.ratings || [],
+                    likes: curStation.feedback.likes || [],
+                    dislikes: curStation.feedback.dislikes || []
+                }));
+            } else {
+                return res.end(JSON.stringify({
+                    session: curStation.playlist,
+                    ratings: [],
+                    likes: [],
+                    dislikes: []
+                }));
+            }
         }
+    }
+    for (var i in req.user.stations) {
+        var stat = req.user.stations[i];
+        if (stat.index == curStation.index) continue;
+        stat.feedback = {
+            likes: [],
+            dislikes: [],
+            ratings: [],
+            active: false
+        };
     }
     async.waterfall([
         function(next) {
             var station = req.user.stations[req.user.lastStation];
-            if (typeof station.playlist !== 'undefined') {
+            if (station && typeof station.playlist !== 'undefined') {
                 echo('playlist/dynamic/delete').get({
                     session_id: station.playlist
                 }, function(err, json) {
@@ -34,15 +63,15 @@ var stationLoad = function(req, res) {
         function(next) {
             req.user.lastStation = req.params.sid;
             var playlistParams = {
-                seed_catalog: req.user.stations[req.params.sid].id,
+                seed_catalog: curStation.id,
                 type: 'catalog-radio',
-                session_catalog: req.user.stations[req.params.sid].id,
+                session_catalog: curStation.id,
                 distribution: 'wandering',
                 adventurousness: 0.5,
                 limited_interactivity: true
             };
             var remainingParams = {};
-            var filters = GLOBAL.parseFilters(req.user.stations[req.params.sid].filters);
+            var filters = GLOBAL.parseFilters(curStation.filters);
             for (var i in filters) {
                 if (!i.match(/mood|style|description/)) {
                     playlistParams[i] = filters[i];
@@ -51,7 +80,7 @@ var stationLoad = function(req, res) {
                 }
             }
             echo('playlist/dynamic/create').get(playlistParams, function(err, json) {
-                req.user.stations[req.params.sid].playlist = json.response.session_id;
+                curStation.playlist = json.response.session_id;
                 req.user.markModified('stations');
                 req.user.save(function() {
                     next(null, json.response.session_id, filters);
@@ -67,11 +96,92 @@ var stationLoad = function(req, res) {
             } else next(null, sessid);
         },
         function(sessid, next) {
-            var recentlyPlayed = [];
-            if (req.user.stations[req.params.sid].recentlyPlayed) {
-                for (var i = 0; i < req.user.stations[req.params.sid].recentlyPlayed.length; i += 16) {
-                    recentlyPlayed.push(req.user.stations[req.params.sid].recentlyPlayed.slice(i, i+16));
+            if (!req.user.mostPlayed) req.user.mostPlayed = {};
+            echo('tasteprofile/read').get({
+                results: 1000,
+                id: curStation.id
+            }, function(err, json) {
+                var history = json.response.catalog.items.sort(function(a, b) {
+                    var diff = a.indirect_play_count - b.indirect_play_count;
+                    if (diff > 0) return -1;
+                    if (diff < 0) return +1;
+                    return 0;
+                }).filter(function(a) {
+                    return typeof a.indirect_play_count === 'number';
+                });
+                for (var i in history.slice(0, 10)) {
+                    var item = history[i];
+                    if (typeof req.user.mostPlayed[item.song_id] === 'undefined') {
+                        req.user.mostPlayed[item.song_id] = {};
+                    }
+                    req.user.mostPlayed[item.song_id][req.params.sid] = item.indirect_play_count;
                 }
+                for (var i in history.slice(11)) {
+                    var item = history[i];
+                    if (typeof req.user.mostPlayed[item.song_id] !== 'undefined') {
+                        req.user.mostPlayed[item.song_id][req.params.sid] = item.indirect_play_count;
+                    }
+                }
+                
+                var mostPlayedList = [];
+                for (var i in req.user.mostPlayed) {
+                    var sng = req.user.mostPlayed[i];
+                    var total = 0;
+                    for (var j in sng) total += sng[j];
+                    mostPlayedList.push({
+                        id: i,
+                        count: total
+                    });
+                }
+                var sorted = mostPlayedList.sort(function(a, b) {
+                    var diff = a.count - b.count;
+                    if (diff > 0) return -1;
+                    if (diff < 0) return +1;
+                    return 0;
+                }).slice(topPlayedMax);
+                for (var id in sorted) delete req.user.mostPlayed[sorted[id].id];
+                req.user.markModified('mostPlayed');
+                
+                var recentlyPlayed = [];
+                var mostRecent = json.response.catalog.items.sort(function(a, b) {
+                    var diff = new Date(a.last_modified) - new Date(b.last_modified);
+                    if (diff > 0) return -1;
+                    if (diff < 0) return +1;
+                    return 0;
+                }).slice(0, localMax);
+                for (var i in mostRecent) recentlyPlayed.push(mostRecent[i].song_id);
+                
+                var feedbackData = {
+                    likes: [],
+                    dislikes: [],
+                    ratings: [],
+                    active: true
+                };
+                for (var i in history) {
+                    var playedSong = history[i];
+                    if (playedSong.song_id) {
+                        var songItem = {
+                            id: playedSong.song_id,
+                            name: playedSong.artist_name + ' - ' + playedSong.song_name,
+                        };
+                        if (playedSong.banned)   feedbackData.dislikes.push(songItem);
+                        if (playedSong.favorite) feedbackData.likes.push(songItem);
+                    }
+                    //TODO: Ratings
+                }
+                
+                req.user.markModified('stations');
+                curStation.feedback = feedbackData;
+                req.user.save(function() {
+                    next(null, recentlyPlayed, sessid, feedbackData);
+                });
+            });
+        },
+        function(recentlyPlayed, sessid, feedbackData, next) {
+            for (var song in req.user.mostPlayed) {
+                if (~recentlyPlayed.indexOf(song))
+                    recentlyPlayed.splice(recentlyPlayed.indexOf(song), 1);
+                recentlyPlayed.push(song);
             }
             if (req.user.recent) {
                 for (var i = 0; i < req.user.recent.length; i+= 16) {
@@ -88,33 +198,31 @@ var stationLoad = function(req, res) {
                        + recentlyPlayed.join('&invalidate_song=SO')
             ;
             request(reqStr, function(err, resp, body) {
-                res.end(sessid);
+                res.end(JSON.stringify({
+                    session: sessid,
+                    likes: feedbackData.likes,
+                    dislikes: feedbackData.dislikes,
+                    ratings: feedbackData.ratings
+                }));
             });
         }
     ]);
 };
 
 var stationUnload = function(req, res, doDelete) {
+    var curStation = req.user.stations[req.params.sid];
     echo('playlist/dynamic/delete').get({
-        session_id: req.user.stations[req.params.sid].playlist
+        session_id: curStation.playlist
     }, function(err, json) {
         if (doDelete) {
-            var fid = req.user.stations[req.params.sid].id;
-            if (req.params.sid == req.user.stations.length - 1) {
-                req.user.stations.pop();
-                if (req.user.lastStation == req.params.sid) {
-                    req.user.lastStation--;
-                }
-            } else {
-                req.user.stations.splice(req.params.sid, 1);
-                for (var i in req.user.stations) {
-                    var fdsi = req.user.stations[i];
-                    if (req.user.lastStation == fdsi.index) {
-                        req.user.lastStation = i;
-                    }
-                    fdsi.index = i;
-                }
-            }
+            var fid = curStation.id;
+            req.user.stations.splice(req.params.sid, 1);
+            for (var i in req.user.stations) req.user.stations[i].index = i;
+            if (
+                (req.user.lastStation !== 0 ||
+                parseInt(req.params.sid) !== 0) &&
+                req.user.lastStation >= parseInt(req.params.sid)
+            ) req.user.lastStation--;
             req.user.markModified('stations');
             req.user.save(function() {
                 echo('tasteprofile/delete').post({
@@ -124,7 +232,7 @@ var stationUnload = function(req, res, doDelete) {
                 });
             });
         } else {
-            req.user.stations[req.params.sid].lastUpdated = "";
+            curStation.lastUpdated = "";
             req.user.save(function() {
                 res.end();
             });
@@ -134,14 +242,6 @@ var stationUnload = function(req, res, doDelete) {
 
 var stationDelete = function(req, res) {
     stationUnload(req, res, true);
-};
-
-var stationInfo = function(req, res) {
-    echo('tasteprofile/read').get({
-        id: req.user.stations[req.params.sid]
-    }, function(err, json) {
-        res.end(JSON.stringify(json));
-    });
 };
 
 router.get('/station/:action/:sid', require('../user/isAuthenticated'), function(req, res) {
@@ -159,7 +259,6 @@ router.get('/station/:action/:sid', require('../user/isAuthenticated'), function
         case 'unload':
             stationUnload(req, res);
         break;
-        //case 'info': stationInfo(req, res); break;
         default:
             res.end(req.params.sid);
         break;

@@ -12,10 +12,8 @@ var lastfm = new LastFmNode({
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
-var localMax  = 64;
-var globalMax = 160;
-//localMax + globalMax < 225
-//Takes  up localMax*#ofstations + globalMax
+var globalMax = 125;
+//globalMax + localMax(station.js) + topPlayedMax(station.js) <= 225
 
 function translate(req, res, next) {
     if (typeof req.params.fileName !== 'undefined' && req.params.fileName.slice(-1 * (req.params.type.length + 1)) == '.' + req.params.type)
@@ -57,22 +55,17 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
             results: 1 + req.params.overhead,
             lookahead: 1
         }, function(err, json) {
-            if (typeof json.response.songs === 'undefined' || json.response.songs.length < 1) {
-                console.log(json.response);
+            if (typeof json.response.songs === 'undefined' || json.response.songs.length < 1
+             || typeof json.response.lookahead === 'undefined' || json.response.lookahead.length < 1) {
+                console.log(JSON.stringify(json.response));
+                //TODO: LET USER KNOW NO MORE SONGS
                 res.end();
                 next("ERR");
             } else {
                 var jrs = json.response.songs[req.params.overhead];
                 var jrl = json.response.lookahead[0];
-                //TODO: Implement Skip Stuff
-                if (!req.user.stations[req.params.sid].recentlyPlayed)
-                    req.user.stations[req.params.sid].recentlyPlayed = [];
                 if (!req.user.recent)
                     req.user.recent = [];
-                req.user.stations[req.params.sid].recentlyPlayed =
-                    jrs.id.slice(2) +
-                    req.user.stations[req.params.sid].recentlyPlayed.slice(0, (localMax-1)*16)
-                ;
                 req.user.stations[req.params.sid].lastUpdated = moment().format('x');
                 req.user.recent =
                     jrs.id.slice(2) +
