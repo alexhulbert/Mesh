@@ -36,7 +36,7 @@ var stationLoad = function(req, res) {
             }
         }
     }
-    for (var i in req.user.stations) {
+    for (var i = 0; i < req.user.stations.length; i++) {
         var stat = req.user.stations[i];
         if (stat.index == curStation.index) continue;
         stat.feedback = {
@@ -217,7 +217,8 @@ var stationUnload = function(req, res, doDelete) {
         if (doDelete) {
             var fid = curStation.id;
             req.user.stations.splice(req.params.sid, 1);
-            for (var i in req.user.stations) req.user.stations[i].index = i;
+            for (var i = 0; i < req.user.stations.length; i++)
+                req.user.stations[i].index = i;
             if (
                 (req.user.lastStation !== 0 ||
                 parseInt(req.params.sid) !== 0) &&

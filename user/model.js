@@ -19,7 +19,6 @@ var station = mongoose.Schema({
     bootstrapped: false,
     image: String,
     filters: [filter],
-    recentlyPlayed: String,
     lastUpdated: String,
     feedback: mongoose.Schema.Types.Mixed
 });

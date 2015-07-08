@@ -11,8 +11,8 @@ router.get('/migrate', function(req, res) {
     Users.find({}, function(err, users) {
         var log = '';
         async.each(users, function(user, next) {
-            for (var s in user.stations)
-                user.stations[s].index = s;
+            for (var i = 0; i < user.stations.length; i++)
+                user.stations[i].index = i;
             user.markModified('stations');
             user.save(next);
         }, function() {
