@@ -67,6 +67,22 @@ function hideSearch() {
 
 function showSearch(view) {
     curView = view;
+    var prompt;
+    switch (view) {
+        case 'firstStation':
+            prompt = 'Enter a song, artist, or genre you enjoy to begin using Mesh';
+        break;
+        case 'bootstrap':
+            prompt = 'Enter a song, artist, or genre to make a new station';
+        break;
+        case 'song':
+            prompt = 'Enter a song or album and listen to it now';
+        break;
+        default:
+            prompt = 'What music would you like to hear?';
+        break;
+    }
+    $('#prompt').text(prompt.toUpperCase());
     $('#bubble').attr('style', '');
     $.sidr('close', 'stat');
     $('.minus').css({

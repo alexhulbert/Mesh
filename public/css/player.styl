@@ -81,6 +81,7 @@
   .cap
     font-size 1.5em
 #background
+  venfor(transform, translate3d(0px, 0px, 0px))
   margin auto
   top 0
   bottom 0
@@ -89,7 +90,7 @@
   position fixed
   z-index -1
 #controls
-  pos(50, 75, middle top, 50vh, 7.5%)
+  pos(50, 75, middle top, 50vh, 3.5em)
   vendor(box-sizing, border-box)
 #next
   pos(95, 50, right middle, 2.25em, 2.25em)
@@ -204,6 +205,12 @@
     transparent 65%, #000 65%, #000 75%, transparent 75%,
     transparent 85%, #000 85%, #000 95%, transparent 95%
   ))
+.header
+  text-align center
+  line-height calc(5rem + 5vw)
+  margin 0
+  font-size 4em
+  vendor(box-shadow, 0 0 0.25em 0 black)
 .clickable
   cursor pointer
   cursor hand
@@ -344,7 +351,6 @@
     span
       opacity 1
       vendor(transition, opacity 350ms cubic-bezier(0.42, 1, 1, 1))
-
 #progress.bigHandle
   vendor(box-shadow, 0 0 0.75em 0 #000)
   height 1.5em
@@ -366,6 +372,54 @@
       height 200%
       top 0
       vendor(transform, rotate(45deg))
+#optList
+  font-size 4em
+  padding 1em 0 0 1em
+#optTitle
+  font-size 5em
+  text-align center
+.optDesc
+  font-size 0.5em
+  padding 0.25em
+  margin-bottom 1.5em
+  white-space pre
+.toggle
+  padding-bottom 0.15em
+  > span
+    display inline-block
+    vertical-align top
+    padding-left 0.5em
+  > input
+    margin-left -9999px
+    position absolute
+    visibility hidden
+    & + label
+      display inline-block
+      position relative
+      cursor pointer
+      outline none
+      vendor(user-select, none)
+      padding 3px
+      width 2em
+      height 1em
+      vendor(border-radius, 1em)
+      vendor(transition, 'border-color 350ms, background 350ms')
+      border 4px solid 
+      &::after
+        border 4px solid
+        margin-top 6px
+        margin-left -3px
+        left 11px
+        width calc(1em - 20px)
+        height calc(1em - 20px)
+        vendor(border-radius, 50%)
+        vendor(transition, 'margin 350ms, border-color 350ms, background 350ms')
+        display block
+        position absolute
+        content ''
+    &:checked + label::after      
+      margin-left 1em
+      border-color transparent !important
 
 body
   font-family 'icons', 'Geometria', 'Josefin Sans', 'Novecento Sans'
@@ -376,6 +430,17 @@ body
   overflow hidden
   vendor(transition, color 400ms)
   &.light
+    .toggle > input
+      & + label
+        background-color rgba(255, 255, 255, 0.04)
+        border-color rgba(255, 255, 255, 0.27)
+        &::after
+          border-color rgba(255, 255, 255, 0.2)
+      &:checked + label
+        border-color rgba(255, 255, 255, 0.54)
+        background-color rgba(255, 255, 255, 0.13)
+        &::after
+          background-color rgba(255, 255, 255, 0.4)
     .circular
       box-shadow 0 0 0 3px #FFF
     .card,.circleCard
@@ -419,6 +484,17 @@ body
     .song.next div
       border 0.10em #FFF dashed
   &.dark
+    .toggle > input
+      & + label
+        background-color rgba(0, 0, 0, 0.04)
+        border-color rgba(0, 0, 0, 0.27)
+        &::after
+          border-color rgba(0, 0, 0, 0.2)
+      &:checked + label
+        border-color rgba(0, 0, 0, 0.54)
+        background-color rgba(0, 0, 0, 0.13)
+        &::after
+          background-color rgba(0, 0, 0, 0.4)
     .circular
       box-shadow 0 0 0 3px #000
     .card,.circleCard
@@ -506,7 +582,7 @@ body
   font-size 5em
   position absolute
   &::before
-    content '\e605'
+    content '\e603'
 
 html.mobile
   #album,#noalbum

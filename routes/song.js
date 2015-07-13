@@ -13,7 +13,6 @@ var lastfm = new LastFmNode({
     useragent: 'Mesh'
 });
 var globalMax = 125;
-//globalMax + localMax(station.js) + topPlayedMax(station.js) <= 225
 
 function translate(req, res, next) {
     if (typeof req.params.fileName !== 'undefined' && req.params.fileName.slice(-1 * (req.params.type.length + 1)) == '.' + req.params.type)

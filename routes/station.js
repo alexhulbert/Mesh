@@ -6,9 +6,7 @@ var moment = require('moment');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
-var localMax = 64;
-var topPlayedMax = 36;
-//globalMax(song.js) + localMax + topPlayedMax <= 225
+var topPlayedMax = 64;
 
 var stationLoad = function(req, res) {
     var curStation = req.user.stations[req.params.sid];
@@ -145,10 +143,10 @@ var stationLoad = function(req, res) {
                 var recentlyPlayed = [];
                 var mostRecent = json.response.catalog.items.sort(function(a, b) {
                     var diff = new Date(a.last_modified) - new Date(b.last_modified);
-                    if (diff > 0) return -1;
-                    if (diff < 0) return +1;
+                    if (diff > 0) return +1;
+                    if (diff < 0) return -1;
                     return 0;
-                }).slice(0, localMax);
+                });
                 for (var i in mostRecent) recentlyPlayed.push(mostRecent[i].song_id);
                 
                 var feedbackData = {
@@ -178,24 +176,27 @@ var stationLoad = function(req, res) {
             });
         },
         function(recentlyPlayed, sessid, feedbackData, next) {
-            for (var song in req.user.mostPlayed) {
-                if (~recentlyPlayed.indexOf(song))
-                    recentlyPlayed.splice(recentlyPlayed.indexOf(song), 1);
-                recentlyPlayed.push(song);
-            }
             if (req.user.recent) {
                 for (var i = 0; i < req.user.recent.length; i+= 16) {
-                    var recentSong = req.user.recent.slice(i, i+16);
+                    var recentSong = 'SO' + req.user.recent.slice(i, i+16);
                     if (~recentlyPlayed.indexOf(recentSong))
                         recentlyPlayed.splice(recentlyPlayed.indexOf(recentSong), 1);
                     recentlyPlayed.push(recentSong);
                 }
             }
-            if (recentlyPlayed.length) recentlyPlayed.splice(0, 0, '');
+            for (var song in req.user.mostPlayed) {
+                if (~recentlyPlayed.indexOf(song))
+                    recentlyPlayed.splice(recentlyPlayed.indexOf(song), 1);
+                recentlyPlayed.push(song);
+            }
+            if (recentlyPlayed.length) {
+                recentlyPlayed.splice(0, recentlyPlayed.length - 135); //TODO: Tweak This!
+                recentlyPlayed.splice(0, 0, '');
+            }
             
             var reqStr = 'http://developer.echonest.com/api/v4/playlist/dynamic/feedback?update_catalog=false&api_key='
                        + process.env.ECHONEST_KEY + '&session_id=' + sessid
-                       + recentlyPlayed.join('&invalidate_song=SO')
+                       + recentlyPlayed.join('&invalidate_song=')
             ;
             request(reqStr, function(err, resp, body) {
                 res.end(JSON.stringify({

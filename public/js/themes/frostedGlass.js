@@ -46,7 +46,7 @@ theme = {
             +0.500: //This is for when there isn't an album
             -0.333; //This is for when an album is present
         //Runs when a new song is loaded
-        $('.view,.noUi-base').css({
+        $('.view:not(.frosty),.noUi-base,.header').css({
             background: 'hsl(' + data.color.join(',') + '%)'
         }); //Setting search view and progress bar background-color
         var hsl =
@@ -134,7 +134,11 @@ theme = {
     "tick": function() {
         //Runs each tick when music is playing
         //Throttle tick function to {ear.refresh}ms to maintain framerate
-        if (Date.now() - ear.lastTick <= ear.refresh) {
+        //Also skip if the animations aren't visible
+        if (
+            Date.now() - ear.lastTick <= ear.refresh ||
+            $('.view:not(.frosty):visible').length
+        ) {
             //Queue this function for the next frame and exit
             if (isRunning) requestAnimationFrame(theme.tick);
             return;

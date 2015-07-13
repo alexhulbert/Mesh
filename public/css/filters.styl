@@ -21,14 +21,12 @@
     cursor pointer
     font-family inherit
     font-size 3em
-#backminus::before
-  content '\e603'
 #filterView
   > div:not(.circular)
     position absolute !important
     bottom 0
-    height 70vh
-    top 30%
+    height calc(100vh - 5rem - 5vw)
+    top calc(5rem + 5vw)
     display none
   .formarea
     position absolute
@@ -41,12 +39,6 @@
     text-align center
     > *
       text-align left
-  #filterTitle
-    text-align center
-    line-height 30vh
-    margin 0
-    font-size 4em
-    vendor(box-shadow, 0 0 0.25em 0 black)
   #types
     right 0.45em
     left 0.25em

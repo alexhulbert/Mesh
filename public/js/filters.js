@@ -109,7 +109,7 @@ function initFilters() {
         disableFadeOut: true,
         railBorderRadius: '0',
         borderRadius: '0',
-        height: '70vh'
+        height: 'calc(100vh - 5rem - 5vw)'
     };
     $('#types').slimScroll(slimParams).parent().attr('id', 'filterMenu');
     $('#manageView').slimScroll(slimParams).parent().attr('id', 'manage');

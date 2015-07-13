@@ -67,14 +67,38 @@ block content
     .minus.clickable.circular
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
-      #container(style="margin-top: -1em")
-      #down.arrow.card(onclick="scrollPage(1)", style="display: none") &#9660;
-      #up.arrow.card(onclick="scrollPage(0)", style="display: none")   &#9650;
+      #container(style='margin-top: -1em')
+      #down.arrow.card(onclick='scrollPage(1)', style='display: none') &#9660;
+      #up.arrow.card(onclick='scrollPage(0)', style='display: none')   &#9650;
     section#answer
       span#cancel.clickable &#xe600;
       .fancyInput
         input(type='text')
   include filters
+  #options.view.frosty
+    #optClose.minus.clickable.circular(onclick='showOptions(false)')
+    h1.header#optTitle Options
+    #optList
+      .toggle
+        input#togWorkaround(type='checkbox')
+        label(for='togWorkaround')
+        span Direct Streaming
+      .optDesc
+        | Loads songs faster, but skips features such as song verification and audio normalization
+        | (Currently works on a very limited number of web browsers)
+      .toggle
+        input#togVisual(type='checkbox', checked='checked')
+        label(for='togVisual')
+        span Audio Visualization
+      .optDesc
+        | Adds sound-synchronized visual effects.
+        | (May cause problems on lower-end computers or outdated browsers)
+      .toggle
+        input#togStar(type='checkbox')
+        label(for='togStar')
+        span 5 Star Feedback
+      .optDesc
+        | Instead of a like and dislike button, you rate your music by giving it between 1 and 5 stars
   #bubble
   #loading
     object#loadLogo(type='image/svg+xml', data='/img/logo.svg')
@@ -88,4 +112,4 @@ block content
       span.cap  Built Using
       br
       span.name The Echonest
-    #version v0.8.7 "Benzaiten"
+    #version v0.8.7 "Hathor"

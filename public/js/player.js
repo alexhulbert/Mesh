@@ -32,7 +32,7 @@ var base = location.href.slice(0, -5);
 var globalOverhead = 0;
 var audioWorkaround = !!navigator.userAgent.match(/iPhone|AppleCore|iTunes|undefined|chrome/gi);
 var colorThief = new ColorThief();
-var ear = { refresh: 33 };
+var ear = { refresh: 50 };
 var locked = false;
 var donePreloading = false;
 var likeStatus = {
@@ -397,10 +397,7 @@ function mesh(ind, part, callback) {
         }
     } else {
         var soin = songs[ind];
-        if (part & 1) {
-            inQueue = true;
-            load(soin);
-        }
+        if (part & 1) load(soin);
         if (part & 2) {
             curSong = ind;
             updateUI(soin);
@@ -519,13 +516,11 @@ function updateUI(data, onlyColor) {
                 strokeAndFill(self.target, hoverFill)
             })
     ;
-    $('#centerpiece').contents().find('g, g > *').css('fill', data.dark ? '#444' : '#D8D8D8');
     if (!onlyColor) {
-        if (data.albumUrl === null) {
+        if (data.albumUrl === null)
             $('#album').css('background-image', 'none');
-        } else {
+        else
             $('#album').css('background-image', 'url("' + data.albumUrl + '")');
-        }
         showLike[data.likeStatus || 0]();
     }
     theme.draw($.extend(data, {color:color}));
@@ -596,25 +591,25 @@ function load(data) {
 var feedback = $.debounce(5000, true, function(opinion, songIndex) {
     lock();
     var sng = songs[songIndex || curSong];
+    var status = null;
+    switch(opinion) {
+        case 'dislike':
+            status = likeStatus.DISLIKE;
+        break;
+        case 'undislike':
+            status = likeStatus.NEUTRAL;
+        break;
+        case 'like':
+            status = likeStatus.LIKE;
+        break;
+        case 'unlike':
+            status = likeStatus.NEUTRAL;
+        break;
+    }
+    if (status !== null) showLike[status](sng);
     $.ajax(
         base + '/feedback/' + (sng.station || curStation) + '/' + opinion + '/' + sng.id
     ).done(function() {
-        var status = null;
-        switch(opinion) {
-            case 'dislike':
-                status = likeStatus.DISLIKE;
-            break;
-            case 'undislike':
-                status = likeStatus.NEUTRAL;
-            break;
-            case 'like':
-                status = likeStatus.LIKE;
-            break;
-            case 'unlike':
-                status = likeStatus.NEUTRAL;
-            break;
-        }
-        if (status !== null) showLike[status](sng);
         if (status == likeStatus.DISLIKE) next(); else unlock();
     });
 });
@@ -942,6 +937,18 @@ $(window).load(function() {
         railBorderRadius: '0',
         borderRadius: '0'
     });
+    $('#optList').slimScroll({
+        size: '1em',
+        position: 'right',
+        width: '100%',
+        height: '100%',
+        alwaysVisible: true,
+        railVisible: true,
+        railOpacity: 0.3,
+        disableFadeOut: true,
+        railBorderRadius: '0',
+        borderRadius: '0'
+    });
     $('#stat .container').slimScroll({
         size: '1em',
         position: 'left',
@@ -973,6 +980,16 @@ $(window).load(function() {
         })
     ;
 });
+
+function showOptions(visible) {
+    if (visible) {
+        $('#player').animate({ opacity: 0 }, 350);
+        $('#options').in();
+    } else {
+        $('#options').out();
+        $('#player').animate({ opacity: 1 }, 350);
+    }
+}
 
 function domLoaded() {
     progBar = $('#progress');
