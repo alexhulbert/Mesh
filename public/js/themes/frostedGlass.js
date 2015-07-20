@@ -95,8 +95,7 @@ theme = {
             var elipsTitle = data.songName;
             if (elipsTitle.length > 20)
                 elipsTitle = data.songName.slice(0, 17) + '...';
-            var rebuildTitle = setInterval(function() {
-                console.log(document.title.length - 7, elipsTitle.length);
+            var rebuildTitle = workerTimer.setInterval(function() {
                 if ((document.title.length - 7) < elipsTitle.length) {
                     var toAdd;
                     //document.title automatically removes trailing whitespace
@@ -110,17 +109,18 @@ theme = {
                     }
                     document.title += toAdd;
                 } else {
-                    clearInterval(rebuildTitle);
+                    workerTimer.clearInterval(rebuildTitle);
+                    //Change the Favicon
+                    $('#favicon').attr('href', data.albumUrl);
                 }
             }, 75);
-        }
-        var clearTitle = setInterval(function() {
+        };
+        var clearTitle = workerTimer.setInterval(function() {
             if (document.title.length > 7) {
-                console.log(document.title.length);
                 document.title = document.title.slice(0, -1);
             } else {
                 rebuild();
-                clearInterval(clearTitle);
+                workerTimer.clearInterval(clearTitle);
             }
         }, 75);
         

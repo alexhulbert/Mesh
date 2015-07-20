@@ -47,6 +47,34 @@ var whoami = '<UNKNOWN IDENTITY>';
 var errors = [];
 var feedbackHistory = [];
 
+var worker = new Worker('/js/worker.js');
+var workerTimer = {
+  id: 0,
+  callbacks: {},
+  setInterval: function(cb, interval, context) {
+    this.id++;
+    var id = this.id;
+    this.callbacks[id] = { fn: cb, context: context };
+    worker.postMessage({ command: 'interval:start', interval: interval, id: id });
+    return id;
+  },
+  onMessage: function(e) {
+    switch (e.data.message) {
+      case 'interval:tick':
+        var callback = this.callbacks[e.data.id];
+        if (callback && callback.fn) callback.fn.apply(callback.context);
+        break;
+      case 'interval:cleared':
+        delete this.callbacks[e.data.id];
+        break;
+    }
+  },
+  clearInterval: function(id) {
+    worker.postMessage({ command: 'interval:clear', id: id });
+  }
+};
+worker.onmessage = workerTimer.onMessage.bind(workerTimer);
+
 //Default: '' (false)
 //1st Time can set to 'force' (true)
 //If not 'force', user can set to 'yes' (true) or 'no' (false)
@@ -804,22 +832,49 @@ function getStations() {
 function timeUpdate() {
     var elapsed = music().audio.currentTime;
     var total = music().duration();
+    var remaining = total - elapsed;
 
     if (pb) progBar.val(elapsed/total);
 
-    if (total - elapsed < 15 && total - elapsed > 0.1 && !inQueue) {
-        mesh(curSong + 1, 1, function() {
-            if (inQueue) {
-                donePreloading = true;
+    if (
+        document.title.slice(7) == songs[curSong].songName &&
+        remaining < (15.375 + songs[curSong].songName.replace(/ /g, '').length*0.075)
+    ) {
+        document.title = document.title.slice(0, -1);
+        var rebuilding = false;
+        var clearTitle = workerTimer.setInterval(function() {
+            if (document.title.length > 7 && !rebuilding) {
+                document.title = document.title.slice(0, -1);
             } else {
-                donePreloading = false;
-                mesh(curSong + 1, 2);
+                if (!rebuilding) {
+                    document.title += ' 0';
+                    rebuilding = true;
+                    return;
+                }
+                if (document.title.length > 11) {
+                    return workerTimer.clearInterval(clearTitle);
+                }
+                document.title += "0:15"[document.title.length - 8];
             }
-        });
-        inQueue = true;
+        }, 75);
     }
 
-    if ((total - elapsed < 0.25 || music().audio.ended) && inQueue) {
+    if (remaining < 15 && remaining > 0.1) {
+        if (!inQueue) {
+            mesh(curSong + 1, 1, function() {
+                if (inQueue) {
+                    donePreloading = true;
+                } else {
+                    donePreloading = false;
+                    mesh(curSong + 1, 2);
+                }
+            });
+            inQueue = true;
+        }
+        document.title = "Mesh - 00:" + ("0" + Math.floor(remaining)).slice(-2);
+    }
+
+    if ((remaining < 0.25 || music().audio.ended) && inQueue) {
         inQueue = false;
         if (donePreloading) {
             mesh(curSong + 1, 2);
@@ -846,6 +901,9 @@ function squeezebox(username, password, ip, port) {
 }
 
 function init() {
+    songs[-1] = {
+        songName: 'Radio'
+    };
     if (!options.novisuals) {
         ear.lastTick = Date.now();
         ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
