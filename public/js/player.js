@@ -1,11 +1,16 @@
 var color = [0, "0%", 0]; //Changes according to album
+var options = {
+    //novisuals
+    //hue
+    //star
+    //audioWorkaround
+}
 var isRunning = false;
 var musicPlayer = [
     {audio: new Audio('')},
     {audio: new Audio('')}
 ];
 var hue;
-var usingHue = false;
 var intervalStep = 0;
 var loadingInterval = false;
 var bkg;
@@ -27,10 +32,8 @@ var pb = true;
 var con;
 var sFreeze = false;
 var theme;
-var px = parseFloat(getComputedStyle(document.documentElement).fontSize);
 var base = location.href.slice(0, -5);
-var globalOverhead = 0;
-var audioWorkaround = !!navigator.userAgent.match(/iPhone|AppleCore|iTunes|undefined|chrome/gi);
+var streamingFailed = false;
 var colorThief = new ColorThief();
 var ear = { refresh: 50 };
 var locked = false;
@@ -43,6 +46,38 @@ var likeStatus = {
 var whoami = '<UNKNOWN IDENTITY>';
 var errors = [];
 var feedbackHistory = [];
+
+//Default: '' (false)
+//1st Time can set to 'force' (true)
+//If not 'force', user can set to 'yes' (true) or 'no' (false)
+var wrkCookie = Cookies.get('workaround');
+if (!new Audio().canPlayType("audio/mp4; codecs=\"mp4a.40.2\"").replace('no', '') && wrkCookie != 'force') {
+    options.audioWorkaround = 'force';
+    Cookies.set('workaround', 'force');
+} else if (wrkCookie == 'no' || typeof wrkCookie === 'undefined') {
+    options.audioWorkaround = false; //Default
+} else {
+    options.audioWorkaround = wrkCookie; //force or yes
+}
+//Default: '' 
+var hueCookie = Cookies.get('hueip');
+if (hueCookie) {
+    initHue(hueCookie);
+} else {
+    options.usingHue = false;
+}
+//Default: '' (visuals/false)
+//1st time can be set to 'force' (novisuals/true)
+//If not 'force', user can set to 'yes' (novisuals) or 'no' (visuals)
+var visCookie = Cookies.get('novisuals');
+if (visCookie != 'force' && !AudioContext && !webkitAudioContext) {
+    options.novisuals = 'force';
+    Cookies.set('novisuals', 'force');
+} else if (wrkCookie == 'no' || typeof wrkCookie === 'undefined') {
+    options.novisuals = false; //Default
+} else {
+    options.novisuals = visCookie;
+}
 
 window.addEventListener('error', function(err) {
     if (errors.length > 50) return;
@@ -73,17 +108,17 @@ Mousetrap.bind('ctrl+shift+/', bugReport);
 
 vex.defaultOptions.className = 'vex-theme-flat-attack';
 $.fn.extend({
-    in: function() {
-        return $(this)
+    in: function(len) {
+        $(this)
             .show(0)
-            .animate({opacity: 1}, 350)
+            .animate({opacity: 1}, len || 350)
         ;
         return this;
     },
-    out: function() {
+    out: function(len) {
         return $(this)
-            .animate({opacity: 0}, 350)
-            .delay(350)
+            .animate({opacity: 0}, len || 350)
+            .delay(len || 350)
             .hide(0)
         ;
     }
@@ -147,31 +182,53 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         ecode = e.path[0].error.code;
     switch (ecode) {
         case 4:
-            console.log("ERROR LOADING SONG!", e);
-            var preloading = !!music().audio.currentTime;
-            //Remove Song current song if no Preload, remove next song if preload
-            if (!preloading || curSong != songs.length - 1) {
-                $('.song').filter(function() {
-                    return $('> div', this).attr('data-index') == (curSong + preloading);
-                }).remove();
+            var proceed = function() {
+                console.log("ERROR LOADING SONG!", e);
+                var preloading = !!music().audio.currentTime;
+                //Remove Song current song if no Preload, remove next song if preload
+                if (!preloading || curSong != songs.length - 1) {
+                    $('.song').filter(function() {
+                        return $('> div', this).attr('data-index') == (curSong + preloading);
+                    }).remove();
+                }
+                songs.splice(curSong + preloading, 1);
+                //Now curSong is next/correct song
+                
+                //Shift index of each song to match songs[]
+                $('#song .container > div > div')
+                    .each(function() {
+                        var e = $(this);
+                        if (parseInt(e.attr('data-index')) > curSong) {
+                            var newIndex = parseInt(e.attr('data-index')) - 1;
+                            e.attr('data-index', newIndex);
+                            var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
+                            e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
+                        }
+                    })
+                ;
+                
+                if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
             }
-            songs.splice(curSong + preloading, 1);
-            //Now curSong is next/correct song
             
-            //Shift index of each song to match songs[]
-            $('#song .container > div > div')
-                .each(function() {
-                    var e = $(this);
-                    if (parseInt(e.attr('data-index')) > curSong) {
-                        var newIndex = parseInt(e.attr('data-index')) - 1;
-                        e.attr('data-index', newIndex);
-                        var noPrefix = e.attr('onclick').replace(/^mesh\([0-9]+,/, '');
-                        e.attr('onclick', 'mesh(' + newIndex + ',' + noPrefix);
+            if (!options.audioWorkaround && !streamingFailed) {
+                $.ajax({
+                    url: music().audio.src + '/metadata',
+                    complete: function(xhr) {
+                        var resp = parseFloat(xhr.responseText);
+                        if (resp === 0) {
+                            proceed();
+                        } else {
+                            //Doesn't support this format
+                            streamingFailed = true;
+                            Cookies.set('workaround', 'force');
+                            options.audioWorkaround = 'force';
+                            songs[curSong].len = resp;
+                            mesh(curSong);
+                        }
                     }
-                })
-            ;
+                });
+            } else proceed();
             
-            if (preloading) load(songs[curSong+1]); else mesh(curSong, 3);
         break;
         case 2:
             console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
@@ -353,7 +410,7 @@ function playSong(data, type, cb) {
     }
     
     if (typeof data === "string") {
-        $.ajax(base + '/grab/song/' + data + (audioWorkaround ? '/legacy' : '')).done(function(dataStr) {
+        $.ajax(base + '/grab/song/' + data + (options.audioWorkaround ? '/legacy' : '')).done(function(dataStr) {
             funct(JSON.parse(dataStr));
         });
     } else if (data instanceof Array) {
@@ -549,7 +606,7 @@ function nextUp(data) {
 function newSong(cb, skip) {
     if (typeof skip === 'undefined') skip = false;
     //TODO: Improve song lookahead logic (globalOverhead)
-    $.ajax(base + '/grab/station/' + curStation + (audioWorkaround ? '/legacy' : '')).done(function(data) {
+    $.ajax(base + '/grab/station/' + curStation + (options.audioWorkaround ? '/legacy' : '')).done(function(data) {
         //globalOverhead = 0;
         colorGen(JSON.parse(data), function(first, second) {
             var statFeedback = feedbackHistory[curStation];
@@ -584,7 +641,7 @@ function load(data) {
         };
     }
     nxtPlayer.audio.addEventListener('error', onNoSong);
-    nxtPlayer.audio.src = srcUrl + (audioWorkaround ? '/legacy' : '');
+    nxtPlayer.audio.src = srcUrl + (options.audioWorkaround ? '/legacy' : '');
     nxtPlayer.audio.load();
 }
 
@@ -680,7 +737,7 @@ function play() {
     $('#background').removeClass('paused');
     music().audio.play({ playAudioWhenScreenIsLocked: true });
     isRunning = true;
-    theme.tick();
+    if (!options.novisuals) theme.tick();
 }
 
 function pause() {
@@ -789,19 +846,33 @@ function squeezebox(username, password, ip, port) {
 }
 
 function init() {
-    ear.lastTick = Date.now();
-    ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
-    ear.analyser = ear.context.createAnalyser(),
-    ear.frequencies = new Uint8Array(ear.analyser.frequencyBinCount);
-    for (var i in musicPlayer) {
-        var mp = musicPlayer[i];
-        mp.audio.addEventListener('timeupdate', timeUpdate);
-        mp.audioSrc = ear.context.createMediaElementSource(mp.audio);
-        mp.audioSrc.connect(ear.analyser);
+    if (!options.novisuals) {
+        ear.lastTick = Date.now();
+        ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
+        ear.analyser = ear.context.createAnalyser(),
+        ear.frequencies = new Uint8Array(ear.analyser.frequencyBinCount);
+        for (var i in musicPlayer) {
+            var mp = musicPlayer[i];
+            mp.audio.addEventListener('timeupdate', timeUpdate);
+            mp.audioSrc = ear.context.createMediaElementSource(mp.audio);
+            mp.audioSrc.connect(ear.analyser);
+        }
+        ear.analyser.connect(ear.context.destination);
+        theme.tick();
+    } else {
+        musicPlayer[0].audio.addEventListener('timeupdate', timeUpdate);
+        musicPlayer[1].audio.addEventListener('timeupdate', timeUpdate);
     }
-    ear.analyser.connect(ear.context.destination);
-    theme.tick();
     getStations();
+
+    var blur = 'blur(96px)';
+    if (typeof InstallTrigger !== 'undefined')  {
+        //FireFox doesn't support direct blur filter yet (only svgs)
+        blur = 'url("/img/filters.svg#';
+        blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
+        blur += 'Blur")';
+    }
+    $('.frost').css('filter', blur);
 
     con = $('#stat .container');
     con.click($.debounce(5000, true, function(e) {
@@ -867,9 +938,6 @@ function init() {
             pb = true;
         })
     ;
-    
-    var hueIp = Cookies.get('hueip');
-    if (hueIp) initHue(hueIp);
     initSearch();
     initFilters();
 };
@@ -877,7 +945,7 @@ function init() {
 function initHue(ip, success, failure) {
     Cookies.set('hueip', ip);
     var successFunct = function() {
-        usingHue = true;
+        options.usingHue = true;
         hue.initialize();
         if (success) success();
     };
@@ -889,7 +957,7 @@ function initHue(ip, success, failure) {
         });
         hue.authenticate(successFunct, function(err) {
             hue.authenticate(successFunct, function(suberr) {
-                usingHue = false;
+                options.usingHue = false;
                 if (failure) failure(err || suberr);
             });
         });

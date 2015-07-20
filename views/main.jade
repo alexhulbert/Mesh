@@ -1,4 +1,4 @@
-extends layout.jade
+extends ./master.jade
 
 block scripts
  | https://code.jquery.com/jquery-2.1.1.min.js
@@ -28,7 +28,10 @@ block css
  | /css/station.css dynamic
  | /css/filters.css dynamic
 block content
+  #frost.frost
+  #nextFrost.frost
   #player
+    #progress
     +icon('searchSong', 'search', 'showSearch("song");')
     +icon('filterBtn', 'brain', 'showFilter("station", true);')
     #background
@@ -37,7 +40,6 @@ block content
     #sag
       span#sagText
     #controls
-      #progress
       a(target='_blank', onclick='this.src = music().audio.src; $(this).click().removeAttr(\'src\');')
       +icon('back', 'skipBack', 'back();')
       +icon('dislike', 'brokenHeart', 'feedback("like");')
@@ -45,9 +47,6 @@ block content
       +icon('like', 'heart', 'feedback("like");')
       +icon('play', 'play', 'play();')
       +icon('pause', 'pause', 'pause();').hidden
-    audio#audio(src='')
-    #noalbum.albumPos
-      +icon('centerpiece', '../logo')
     #album.albumPos
     #lockOverlay.albumPos
       +icon('ellipsis', 'ellipsis', 'noclick')
@@ -112,4 +111,4 @@ block content
       span.cap  Built Using
       br
       span.name The Echonest
-    #version v0.8.7 "Hathor"
+    #version v0.8.7b "Hathor"

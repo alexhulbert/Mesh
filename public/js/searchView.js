@@ -186,7 +186,7 @@ function playSearch(target, query) {
                         playSong(searchRes, 'next');
                     });
                 };
-                if (audioWorkaround) {
+                if (options.audioWorkaround) {
                     $.ajax(
                         base + '/stream/' +
                         encodeForURI(songArtist[1]) + '/' +
@@ -213,7 +213,7 @@ function playSearch(target, query) {
                         if (!songs.length) return playSong(songsInAlbum, 'next');
                         var songInAlbum = songs[0];
                         var realSong = $.extend({}, baseData, songInAlbum);
-                        if (audioWorkaround) {
+                        if (options.audioWorkaround) {
                             $.ajax(
                                 base + '/stream/' +
                                 encodeForURI(songInAlbum.artistName) + '/' +

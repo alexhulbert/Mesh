@@ -27,8 +27,8 @@ theme = {
     "draw": function(data) {
         //data.dark means the UI (and not the text) is dark
         //body.dark (the class) means the font is dark
-        //Set variables for tick to reference
-        if (usingHue) {
+        //Testing out Phillips Hue integration
+        if (options.usingHue) {
             //TODO: set 1,2
             hue.setValue([1,2],{
                 hue: Math.round(data.color[0]*200),
@@ -90,17 +90,56 @@ theme = {
         if (data.albumName !== null) str += ' - ' + data.albumName;
         $('#sagText').html(str); //Displaying the current Artist/Song/Album
         
-        //px = ratio of pixels to ems since blur only takes pixels
-        px = parseFloat(getComputedStyle(document.documentElement).fontSize);
+        //Animate the tab title
+        var rebuild = function() {
+            var elipsTitle = data.songName;
+            if (elipsTitle.length > 20)
+                elipsTitle = data.songName.slice(0, 17) + '...';
+            var rebuildTitle = setInterval(function() {
+                console.log(document.title.length - 7, elipsTitle.length);
+                if ((document.title.length - 7) < elipsTitle.length) {
+                    var toAdd;
+                    //document.title automatically removes trailing whitespace
+                    if (
+                        document.title.length == 6 ||
+                        elipsTitle[document.title.length - 7] === ' '
+                    ) {
+                        toAdd = ' ' + elipsTitle[document.title.length - 6];
+                    } else {
+                        toAdd = elipsTitle[document.title.length - 7];
+                    }
+                    document.title += toAdd;
+                } else {
+                    clearInterval(rebuildTitle);
+                }
+            }, 75);
+        }
+        var clearTitle = setInterval(function() {
+            if (document.title.length > 7) {
+                console.log(document.title.length);
+                document.title = document.title.slice(0, -1);
+            } else {
+                rebuild();
+                clearInterval(clearTitle);
+            }
+        }, 75);
         
+        //Fade out current background with nextFrost
+        var frost = $('#frost');
+        $('#nextFrost').css({
+            'background-color': frost.css('background-color'),
+            'background-image': frost.css('background-image')
+        }).css({
+            display: 'block',
+            opacity: 1
+        });
         if (!data.albumUrl || data.albumUrl == '/img/noAlbum.png') {
             //Runs when there isn't any album art
-            $('#frost').css({
-                'background': 'hsl(' + hsl + ')',
-                filter: '',
-                '-webkit-filter': ''
+            frost.css({
+                'background-color': 'hsl(' + hsl + ')',
+                'background-image': ''
             }); //Set the main background and remove the filter
-            
+            $('#nextFrost').out(700); //Fade out last image
             //Getting the default brightness for the circle 
             var glowBri;
             if (data.dark)
@@ -108,27 +147,15 @@ theme = {
             else 
                 glowBri = Math.max(color[2] - 25, 0);
         } else {
-            //Generate a blur
-            var blur = 'blur(' + 6*px + 'px)';
-            if (typeof InstallTrigger !== 'undefined')  {
-                //FireFox doesn't support direct blur filter yet (only svgs)
-                blur = 'url("/img/filters.svg#';
-                blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
-                blur += 'Blur")';
-            }
             //Runs when album art is available
-            $('#frost').css({
+            frost.css({
                 'background-image': 'url("' + data.albumUrl + '")',
-                'background-size': 'cover',
-                'background-position': 'center'
+                'background-color': ''
             }); //Set the background image to the album (obviously)
+            $('#nextFrost').out(750); //Fade out last image
             $('#background').css({
                 background: 'rgba(' + (data.dark ? '0,0,0' : '255,255,255') + ',0.15)'
             }); //Fading the background so you can see the UI Elements
-            $('#frost').css({
-                filter: blur,
-                '-webkit-filter': 'blur(' + 6*px + 'px)'
-            }); //Add the blur to the background
         }
     },
     "tick": function() {
@@ -173,50 +200,5 @@ theme = {
         //Rerun this function next frame if music is playing
         if (isRunning) requestAnimationFrame(theme.tick);
     },
-    "init": function() {
-        //Make the album edges rounded
-        $('.albumPos').css('border-radius', '1em');
-        //Add some more padding inside the album
-        $('#download,#feedbackBtn,#feedbackIcon').css('top', '2.5vh');
-        $('#feedbackBtn,#feedbackIcon').css('right', '2.5vh');
-        $('#download').css('left', '2.5vh');
-        //Generate a blur value
-        var blur = 'blur(' + 6 *px + 'px)';
-        if (typeof InstallTrigger !== 'undefined')  {
-            //FireFox doesn't support direct blur filter yet (only svgs)
-            blur = 'url("/img/filters.svg#';
-            blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
-            blur += 'Blur")';
-        }
-        bkg.css({
-            background: 'none',
-            width: '100%',
-            height: '100%',
-            'z-index': 0
-        });
-        //Make the real background object
-        $('<div></div>')
-            .attr({
-                id: 'frost',
-                'class': 'themeSpec'
-            })
-            .css({
-                width:  '100%',
-                height: '100%',
-                'background-size': 'cover',
-                'background-position': 'center',
-                transform: 'translate3d(0, 0, 0)',
-                filter: blur,
-                '-webkit-filter': 'blur(' + 6*px + 'px)',
-                position: 'absolute',
-            })
-            .prependTo(body)
-        ;
-        //Put Progress bar at the top
-        $('#progress')
-            .addClass('bigHandle')
-            .detach()
-            .prependTo('#player')
-        ;
-    }
+    "init": function() { }
 };
