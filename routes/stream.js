@@ -94,8 +94,8 @@ GLOBAL.stream = function(req, res) {
                         res.oldWriteHead = res.writeHead;
                         res.writeHead = function(statusCode, reasonPhrase, headers) {
                             res.setHeader('Content-Type', req.params.dowhat == 'download' ? 'application/octet-stream' : data.type);
+                            res.setHeader('Cache-Control', 'no-cache');
                             res.removeHeader('x-content-type-options');
-                            res.removeHeader('cache-control');
                             res.removeHeader('alternate-protocol');
                             res.removeHeader('server');
                             res.oldWriteHead(statusCode, reasonPhrase, headers);
