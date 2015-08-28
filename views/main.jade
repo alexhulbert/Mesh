@@ -52,8 +52,10 @@ block content
       +icon('ellipsis', 'ellipsis', 'noclick')
     //+icon('download', 'download')
     #stat
+      .station.current.nowPlaying.no-animation
+        div
       .container
-        .add.station.circular(onclick='showSearch("bootstrap");', data-id='-1', data-bri="25")
+        .add.station.circular(onclick='showSearch("bootstrap");', data-id='-1', data-bri="10")
       #scUp
       #scDown
     #song
@@ -67,12 +69,10 @@ block content
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style='margin-top: -1em')
-      #down.arrow.card(onclick='scrollPage(1)', style='display: none') &#9660;
-      #up.arrow.card(onclick='scrollPage(0)', style='display: none')   &#9650;
     section#answer
       span#cancel.clickable &#xe600;
       .fancyInput
-        input(type='text')
+        input(type='text', autocomplete='off')
   include filters
   #options.view.frosty
     #optClose.minus.clickable.circular(onclick='showOptions(false)')
@@ -111,4 +111,4 @@ block content
       span.cap  Built Using
       br
       span.name The Echonest
-    #version v0.8.7c "Hathor"
+    #version v0.8.8 "Xochipilli"

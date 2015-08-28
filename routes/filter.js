@@ -212,13 +212,23 @@ GLOBAL.parseFilters = function(filters) {
                 var data = otherData[thisFilter.type];
                 var baseNum;
                 if (typeof data[thisFilter.key] === 'undefined')
-                    baseNum = 1;
+                    baseNum = 0;
                 else
                     baseNum = data[thisFilter.key];
-                if (thisFilter.value.slice(-1) == "+")
-                    baseNum *= 1.25;
-                else
-                    baseNum /= 1.25;
+                switch(thisFilter.value.slice(1)) {
+                    case '+':
+                        baseNum += 1;
+                    break;
+                    case '++':
+                        baseNum += 2.5;
+                    break;
+                    case '-':
+                        baseNum -= 1;
+                    break;
+                    case '--':
+                        baseNum -= 2.5;
+                    break;
+                }
                 data[thisFilter.key] = baseNum;
             break;
         }
@@ -384,7 +394,9 @@ router.get('/filter/list/:sid', require('../user/isAuthenticated'), function(req
             break;
             case 'style':
                 filterInfo.desc += 'will play ';
-                if (filterInfo.value == 'G+')
+                if (filterInfo.length > 2)
+                    filterInfo.desc += 'much ';
+                if (filterInfo.value.slice(-1) == '+')
                     filterInfo.desc += 'more ';
                 else
                     filterInfo.desc += 'less ';
@@ -393,7 +405,9 @@ router.get('/filter/list/:sid', require('../user/isAuthenticated'), function(req
             break;
             case 'mood':
                 filterInfo.desc += 'will play music that is ';
-                if (filterInfo.value == 'M+')
+                if (filterInfo.length > 2)
+                    filterInfo.desc += 'much ';
+                if (filterInfo.value.slice(-1) == '+')
                     filterInfo.desc += 'more ';
                 else
                     filterInfo.desc += 'less ';

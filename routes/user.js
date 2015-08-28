@@ -13,7 +13,7 @@ router.get('/user/authenticated', function(req, res) {
 //Get User Model
 
 router.get('/user/model', require('../user/isAuthenticated'), function(req, res) {
-    var userData = JSON.parse(JSON.stringify(req.user));
+    var userData = JSON.parse(JSON.stringify(req.user).replace(/"_id": "[0-9a-f]{24}",?/g, ''));
     for (var i in blacklist) userData[blacklist[i]] = undefined;
     var prettyMostPlayed = {};
     for (var i in userData.mostPlayed) {

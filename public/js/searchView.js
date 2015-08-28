@@ -24,6 +24,7 @@ function clrSearch() {
     $('.card:not(.arrow)').remove();
     $('#up,#down').fadeOut();
     co.css('margin-top', '-1em');
+    handler();
 }
 
 function resizeText() {
@@ -136,6 +137,18 @@ function addStat() {
             elem.appendTo('#container');
         }
         $('#searchView').addClass('choose');
+        co.slimScroll({
+            size: '1em',
+            position: 'right',
+            width: '100%',
+            height: '55vh',
+            alwaysVisible: true,
+            railVisible: true,
+            railOpacity: 0.3,
+            disableFadeOut: true,
+            railBorderRadius: '0',
+            borderRadius: '0'
+        });
         setTimeout(refreshScroll, 350);
     });
 }
@@ -148,24 +161,6 @@ function selectSong(self) {
         query = $.parseHTML(target.find('.name').html().split('<br>')[1])[0].textContent;
     var funct = (curView != 'song' ? bootstrapSearch : playSearch);
     funct(target, query);
-}
-
-function refreshScroll() {
-    var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
-    if (mtop == -1)
-        $('#up').fadeOut();
-    else
-        $('#up').fadeIn();
-    if (mtop*px + co.offset().top + co.height() - 8.25*px < 10)
-        $('#down').fadeOut();
-    else
-        $('#down').fadeIn();
-}
-
-function scrollPage(doUp) {
-    var mtop = parseFloat(co.attr('style').replace(/margin-top: |em/g,''));
-    co.css('margin-top', mtop + (doUp ? -8.25 : 8.25) + 'em');
-    setTimeout(refreshScroll, 350);
 }
 
 function playSearch(target, query) {
@@ -260,6 +255,10 @@ function bootstrapSearch(target, query) {
                     opacity: 1,
                     position: 'fixed'
                 });
+                if (curView == 'firstStation') {
+                    hideSearch();
+                    return loadStation(data);
+                }
                 sFreeze = true;
                 $.sidr('open', 'stat');
                 setTimeout(function() {
@@ -269,7 +268,7 @@ function bootstrapSearch(target, query) {
                         width:  '7.875em',
                         height: '7.875em'
                     }), 1000, 'swing', function() {
-                        (curView == 'firstStation' ? initWithStation : loadStation)(data);
+                        initWithStation(data);
                         sFreeze = false;
                         bubble
                             .addClass('noTransition')

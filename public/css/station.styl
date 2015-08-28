@@ -78,17 +78,25 @@
   font-size 5vh
   vendor(transition, all 350ms)
 #container
-  pos(50, 45, top middle, 100%, 55vh)
+  pos(50, 0, top middle, 100%, 55vh)
   vendor(box-sizing, border-box)
   padding 1em
   opacity 0
+#clip > .slimScrollDiv
+  top 45vh
+  margin-top 0.5em
 #searchView
+  &:not(.choose) #clip .slimScrollRail
+    opacity 0 !important
+  .slimScrollRail, .slimScrollBar
+    vendor(transition, 350ms opacity)
   &.choose
     #container
       vendor(transition, margin-top 350ms)
       opacity 1
       height auto
     .fancyInput,#cancel
+      vendor(transition, top 350ms)
       top -30%
       .caret, input
         display none
@@ -127,20 +135,6 @@ body
       color rgba(0, 0, 0, 0.4)
     .caret
       background #000
-        
-.arrow
-  min-width 2em
-  font-size 3em
-  height 2em
-  text-align center
-  line-height 2em
-  right 3%
-  position absolute
-
-  &#down
-    margin-top 80vh
-  &#up
-    margin-top 55vh
 
 .fancyInput
   vendor(transition, all 350ms)

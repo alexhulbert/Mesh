@@ -155,6 +155,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 track: song,
                 handlers: {
                     success: function(dta) {
+                        d.duration = dta.track.duration;
                         if (typeof dta.track.album === 'undefined') {
                             next(null, false, null, la);
                             d.albumName = null;

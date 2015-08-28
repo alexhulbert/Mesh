@@ -14,12 +14,18 @@ var lastfm = new LastFmNode({
 var freq = 14;
 
 function translate(req, res, next) {
-    if (typeof req.params.sid !== 'undefined' && req.params.sid.slice(-5) == '.opml')
-        req.query.key = req.params.sid.slice(0, -5);
+    if (typeof req.params.sidKey !== 'undefined' && req.params.sidKey.slice(-5) == '.opml')
+        req.query.key = req.params.sidKey.slice(0, -5);
     next(null, req, res);
 }
 
-router.get('/stations/:sid?', translate, require('../user/isAuthenticated'), function(req, res) {
+router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), function(req, res) {
+    if (typeof req.params.sidKey !== 'undefined') {
+        var sid = parseInt(req.params.sidKey);
+        if (sid >= req.user.stations.length || sid < 0 || isNaN(sid))
+            return res.status(400).end('Invalid Station Index');
+        req.params.sidKey = sid;
+    }
     var data = [];
     var getInfo = function(station, done) {
         var subdata = {
@@ -83,13 +89,13 @@ router.get('/stations/:sid?', translate, require('../user/isAuthenticated'), fun
         }
     };
 
-    if (typeof req.params.sid !== 'undefined' && (req.params.sid + "").slice(-5) != '.opml') {
-        getInfo(req.user.stations[req.params.sid], function() {
+    if (typeof req.params.sidKey !== 'undefined' && (req.params.sidKey + "").slice(-5) != '.opml') {
+        getInfo(req.user.stations[req.params.sidKey], function() {
             res.end(JSON.stringify(data[0]));
         });
     } else {
         async.each(req.user.stations, getInfo, function(err) {
-            if (typeof req.params.sid !== 'undefined' && (req.params.sid + "").slice(-5) == '.opml') {
+            if (typeof req.params.sidKey !== 'undefined' && (req.params.sidKey + "").slice(-5) == '.opml') {
                 res.render('squeezebox', {
                     stations: data,
                     url: process.env.URL,

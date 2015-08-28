@@ -1,20 +1,19 @@
 @import('utils')
 
-@keyframes slideLeft
-  to
-    margin-left 3.25em
-    
-@keyframes slideCenter
-  to
-    margin-left 7.3125em
-    
-@keyframes fadeIn
-  to
+@keyframes blink
+  0%
     opacity 1
-    
-@keyframes fadeOut
-  to
+  50%
     opacity 0
+  100%
+    opacity 1
+@keyframes unblink
+  0%
+    opacity 1
+  50%
+    opacity 0
+  100%
+    opacity 1
 
 .view,.subview
   display none
@@ -24,7 +23,7 @@
   vendor(transition, opacity 350ms)
   position fixed
   &.visible
-    opacity 1
+    opacity 1f
 #player
   height 100%
 #searchSong,#filterBtn
@@ -164,6 +163,7 @@
   pointer-events none
 #scUp
   pos(50, 0, middle top, 100%, 20%)
+  top 12.125em
 #scDown
   pos(50, 100, middle bottom, 100%, 20%)
 .sidr
@@ -188,7 +188,14 @@
 #stat
   left -22.5em
   .container
-    vendor(box-shadow, inset -1.1em 0 1.25em -1em #000)
+    vendor(box-shadow, inset -1.1em 0.8em 1.25em -1em #000)
+  &::before
+    vendor(box-shadow, inset -1.05em 0em 1.5em -1.4em #000)
+    content ''
+    top 0
+    height 12.125em
+    width 100%
+    position absolute
 #song
   right -22.5em
   .container
@@ -214,7 +221,7 @@
   ))
 .header
   text-align center
-  line-height calc(5rem + 5vw)
+  padding 5vw 0
   margin 0
   font-size 4em
   vendor(box-shadow, 0 0 0.25em 0 black)
@@ -235,10 +242,11 @@
   &.current
     font-weight 400
 .station
+  z-index 3
   border-radius 50%
   &:not(.add) div
     vendor(transition, background-size 350ms)
-  &:hover:not(.add) div
+  &:hover:not(.add):not(.nowPlaying) div
     background-size 125% 125%
   &:nth-child(2)
     margin-top 13.5em
@@ -253,6 +261,7 @@
       width 100%
       text-align center
       font-size 1.25em
+      pointer-events none
   &:last-child
     margin-bottom 3.5em
   &.add 
@@ -266,32 +275,38 @@
       font-size 0.7em
       line-height 6.75rem
       content '\e602'
-  &.current
+  &.current:not(.nowPlaying)
     margin-bottom 4.5em
     &::after
       content "Now Playing\a" attr(title)
       white-space pre
   margin 3.5em auto 0 auto
-  span
+  span:not(.inline)
     font-size 4em
     box-shadow 0 0 3px
-    transition opacity 350ms
+    vendor(transition, "margin 350ms, opacity 350ms ease-out")
+    z-index -1
     opacity 0
     position absolute
     border-radius inherit
     margin-top 0.36em
     vendor(box-sizing, border-box)
     &.left
-      margin-left -1.5em
+      margin-lfet 0.375em
       &::before
         content '\e600'
         font-size 0.7em
         line-height 4rem
     &.right
-      margin-left 1.5em
+      margin-right 0.375em
   &:hover
-    span
+    span:not(.inline)
+      &.left
+        margin-left -1.5em
+      &.right
+        margin-right -1.5em
       opacity 1
+      z-index 1
   div
     background inherit
     background-size 100% 100%
@@ -307,16 +322,25 @@
       border-radius 50%
       content ''
       display block
+    &::before
+      content ''
+      width 22.5em
+      left 0
+      height 7.875em
+      position absolute
+      cursor default
+      z-index 0
   &.current > div::after
     opacity 0
   &::after
-    content attr(title)
     text-align center
     position absolute
-    font-size: 1.25em
+    font-size 1.25em
     margin 15px auto 0 auto
     left 0
     right 0
+  &:not(.nowPlaying)::after
+    content attr(title)
 .song
   left 0
   right 0
@@ -328,21 +352,43 @@
     opacity 0.95
   &:last-child
     margin-bottom 2em
-  span
+  .inline
+    vendor(transform, translate(4em, 0))
+    vendor(transition, transform 350ms ease-out)
+    position absolute
+    display inline
+    width 1em
+    height 1em
+    font-size 3.5em
+  .inline.iLike, .inline.iDislike
+    left 3em
+    padding-right 0.15em
+    padding-left 0.55em
+  .inline.iInfo, .inline.iRemove
+    right 0em
+    padding-left 0.15em
+    padding-right 0.6em
+  .inline.iLike, .inline.iInfo
+    margin-top -2.25em
+  .inline.iDislike, .inline.iRemove
+    margin-top -1.00em
+  span:not(.inline)
     width 11.25em
     position relative
     span
       display table
       position absolute
-      margin 1.5em 0
+      margin-bottom 1.5em
+      padding-top 1.5em
       width 22.5em
       height auto
       opacity 0
       text-align center
+      pointer-events none
       vendor(transition, opacity 400ms ease-in 50ms)
   div
     vendor(transition, inherit)
-    margin 0 auto 0 7.3125em
+    margin 0 7.3125em
     &::after
       width 100%
       height 100%
@@ -353,11 +399,31 @@
   &:hover
     margin-bottom 6em
     div
-      margin 0 auto 0 3.25em
-      vandor(transition, margin 400ms ease 50ms)
-    span
+      margin 0 19em 0 3.25em
+      vendor(transition, margin 400ms ease 50ms)
+    .inline
+      vendor(transform, translate(0, 0))
+    span:not(.inline)
       opacity 1
+      pointer-events all
       vendor(transition, opacity 350ms cubic-bezier(0.42, 1, 1, 1))
+.nowPlaying
+  margin 1.25em auto 3em !important
+  cursor default
+  vendor(transition, background-image 350ms)
+  div::before
+    top 0
+    height 12.5em
+  &::after
+    pointer-events none
+    content 'Now Playing'
+    vendor(animation, unblink 700ms)
+  &.showName::after
+    content attr(title)
+  &:hover::after
+    vendor(animation, blink 700ms)
+  .no-animation
+    vendor(animation, none)
 #progress
   pos(0, 0, top left, 100%, 0.2em)
   vendor(box-shadow, 0 0 0.75em 0 #000)
@@ -421,6 +487,10 @@
     &:checked + label::after      
       margin-left 1em
       border-color transparent !important
+    &[disabled] + label
+      cursor default
+      &::after
+        display none
 
 body
   font-family 'icons', 'Geometria', 'Josefin Sans', 'Novecento Sans'

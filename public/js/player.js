@@ -1,20 +1,23 @@
+//I - Setting Initial Variables
+//-----------------------------
+
 var color = [0, "0%", 0]; //Changes according to album
 var options = {
     //novisuals
     //hue
     //star
     //audioWorkaround
-}
+};
 var isRunning = false;
 var musicPlayer = [
     {audio: new Audio('')},
     {audio: new Audio('')}
 ];
-var hue;
+var hue; //Hue modifier
 var intervalStep = 0;
 var loadingInterval = false;
-var bkg;
-var light = true;
+var bkg; //#background
+var light = true; //light = light background
 var curStation = null;
 var inQueue = false;
 var sidebar = 0;
@@ -28,10 +31,10 @@ var onUp = false, onDown = false;
 var mIndex = 0;
 var progBar;
 var nextData;
+var nextPreview;
 var pb = true;
 var con;
 var sFreeze = false;
-var theme;
 var base = location.href.slice(0, -5);
 var streamingFailed = false;
 var colorThief = new ColorThief();
@@ -46,6 +49,316 @@ var likeStatus = {
 var whoami = '<UNKNOWN IDENTITY>';
 var errors = [];
 var feedbackHistory = [];
+var ratio = -2;
+var hasAlbum = false;
+var tabid = null;
+vex.defaultOptions.className = 'vex-theme-flat-attack';
+
+//II - Visuals & UI
+//-----------------
+
+var UI = {
+    "recolor": function(color, dark) {
+        $('.circular')
+            .each(function(i, elem) {
+                var e = $(elem);
+                var briParam = parseInt(e.data('bri')) || 0;
+                var fadedHsl =
+                    color[0] + ',' +
+                    color[1] + ',' +
+                    Math.min(color[2] + (dark ? -1 : 1)*briParam, 100) + '%'
+                ; //Setting the color based on data-bri parameter
+                if (e.is(':hover')) e.css('color', 'hsl(' + fadedHsl + ')');
+                e
+                    .mouseenter(function(self) {
+                        $(self.target).css('color', 'hsl(' + fadedHsl + ')');
+                    }) //Set Color to Theme Color on mouse over
+                ;
+            }) //Change color on mouse over
+            .mouseleave(function(self) {
+                $(self.target).css('color', '');
+            }) //Revert circle buttons on mouse exit
+        ;
+    },
+    
+    
+    "preview": function() {
+        if (nextPreview) {
+            var upNext = $('.next.song');
+            upNext.data('song', nextPreview);
+            upNext.find('div').css('background-image', 'repeating-linear-gradient(135deg, transparent, transparent 0.25em, rgba(127,127,127, 0.5) 0.25em, rgba(127,127,127, 0.5) 0.5em), url(' + nextPreview.albumUrl + ')');
+            upNext.find('span span').html('"{0}"<br>{1}<br>{2}'.format(
+                nextPreview.songName,
+                nextPreview.artistName,
+                nextPreview.albumName ? nextPreview.albumName : '(No Album)'
+            ));
+            nextPreview = null; //No need to change it anymore
+        }
+    },
+    
+    
+    "draw": function(data, onlyColor) { //Redraws UI
+        if (!onlyColor) updateHistory('set', curSong);
+        var fill, hoverFill, pressFill;
+        color = data.color;
+        if (color[0] === null) color[0] = 0;
+        if (data.dark) {
+            light = false;
+            $('body').addClass('light').removeClass('dark');
+            fill = "#FFF";
+            hoverFill = "#BBB";
+            pressFill = "#888";
+        } else {
+            light = true;
+            $('body').addClass('dark').removeClass('light');
+            fill = "#000";
+            hoverFill = "#444";
+            pressFill = "#555";
+        }
+        var icons = $('.icon').contents();
+        for (var i = 0; i < icons.length; i++) {
+            $('svg', icons[i]).css('cursor', 'pointer');
+            UI.strokeAndFill(icons[i], fill);
+        }
+        $('.icon.clickable')
+            .mouseenter(function(self) {
+                var context = $(self.target).contents().addBack();
+                UI.strokeAndFill(context, hoverFill);
+            })
+            .mouseleave(function(self) {
+                var context = $(self.target).contents().addBack();
+                UI.strokeAndFill(context, fill);
+            })
+            .contents().find('svg').add('svg.icon.clickable')
+                .mousedown(function(self) {
+                    UI.strokeAndFill(self.target, pressFill);
+                })
+                .mouseup(function(self) {
+                    UI.strokeAndFill(self.target, hoverFill)
+                })
+        ;
+        if (!onlyColor) {
+            if (data.albumUrl === null)
+                $('#album').css('background-image', 'none');
+            else
+                $('#album').css('background-image', 'url("' + data.albumUrl + '")');
+            showLike[data.likeStatus || 0]();
+        }
+        UI.preview();
+        //data.dark means the UI (and not the text) is dark
+        //body.dark (the class) means the font is dark
+        //Testing out Phillips Hue integration
+        if (options.usingHue) {
+            //TODO: set 1,2
+            hue.setValue([1,2],{
+                hue: Math.round(color[0]*200),
+                sat: Math.round(parseInt(color[1].slice(0, -1))*2.55),
+                bri: Math.round(color[2]*2.55)
+            });
+        }
+        hasAlbum =
+            typeof songs[curSong] !== 'undefined' &&
+            typeof songs[curSong].albumUrl !== 'undefined' &&
+            songs[curSong].albumUrl != '/img/noAlbum.png'
+        
+        ;
+        //Feel free to tweak these ratios on your own Higher -> colorful/subtle
+        ratio = hasAlbum ?
+            -2.0: //This is for when an album is present
+            -0.5; //This is for when there isn't an album
+        //Runs when a new song is loaded
+        $('.view:not(.frosty),.noUi-base,.header').css({
+            background: 'hsl(' + color.join(',') + '%)'
+        }); //Setting search view and progress bar background-color
+        var hsl =
+            color[0] + ',' +
+            color[1] + ',' +
+            Math.min(color[2] + (data.dark ? -10 : 10), 100) + '%'
+        ; //Setting tinted hsl color
+        $('.fancyInput,.noUi-background').css({
+            'background-color': 'hsl(' + hsl + ')'
+        }); //Setting foreground color on progbar/search view
+        
+        UI.recolor(color, data.dark);
+        
+        $('.sidr').css({
+            'background-color': 'hsl(' +
+                color[0] + ',' +
+                color[1] + ',' +
+                Math.min(color[2] + (data.dark ? -10 : 10), 100) + '%)'
+        }); //Coloring the sidebar
+        
+        var colorA =
+            'hsl(' + ((color[0] + 120) % 360)
+            + ',' + (parseFloat(color[1])+50)/2 + '%,' +
+            ((data.dark ? 75 : 25) + color[2])/2 + '%)'
+        ;
+        $('.nl-dd ul, nl-dd ul li:hover:active').css('color', colorA);
+        var colorB =
+            'hsl(' + ((color[0] + 240) % 360)
+            + ',' + parseFloat(color[1])/2 + '%,'
+        ;
+        var colorDarker = colorB + ((data.dark ? 100 : 0) + color[2])/2 + '%)';
+        colorB += color[2] + '%)';
+        
+        $('.nl-field ul, .ui-autocomplete').css('background', colorB);
+        $('.nl-form select, .nl-form input, .nl-field-toggle').css({
+            'color': colorDarker,
+            'border-bottom': '1px dashed ' + colorDarker
+        });
+        
+        var str = data.songName + '<br>' + data.artistName;
+        if (data.albumName !== null) str += ' - ' + data.albumName;
+        $('#sagText').html(str); //Displaying the current Artist/Song/Album
+        
+        //Animate the tab title
+        var rebuild = function() {
+            var elipsTitle = data.songName;
+            if (elipsTitle.length > 20)
+                elipsTitle = data.songName.slice(0, 17) + '...';
+            var rebuildTitle = workerTimer.setInterval(function() {
+                tabid = rebuildTitle;
+                if ((document.title.length - 7) < elipsTitle.length) {
+                    var toAdd;
+                    //document.title automatically removes trailing whitespace
+                    if (
+                        document.title.length == 6 ||
+                        elipsTitle[document.title.length - 7] === ' '
+                    ) {
+                        toAdd = ' ' + elipsTitle[document.title.length - 6];
+                    } else {
+                        toAdd = elipsTitle[document.title.length - 7];
+                    }
+                    document.title += toAdd;
+                } else {
+                    workerTimer.clearInterval(rebuildTitle);
+                    tabid = null;
+                    //Change the Favicon
+                    $('#favicon').attr('href', data.albumUrl);
+                }
+            }, 75);
+        };
+        if (data.songName) {
+            if (tabid !== null) workerTimer.clearInterval(tabid);
+            var clearTitle = workerTimer.setInterval(function() {
+                tabid = clearTitle;
+                if (document.title.length > 7) {
+                    document.title = document.title.slice(0, -1);
+                } else {
+                    rebuild();
+                    workerTimer.clearInterval(clearTitle);
+                }
+            }, 75);
+        }
+        
+        //Fade out current background with nextFrost
+        var frost = $('#frost');
+        $('#nextFrost').css({
+            'background-color': frost.css('background-color'),
+            'background-image': frost.css('background-image')
+        }).css({
+            display: 'block',
+            opacity: 1
+        });
+        if (!data.albumUrl || data.albumUrl == '/img/noAlbum.png') {
+            //Runs when there isn't any album art
+            frost.css({
+                'background-color': 'hsl(' + hsl + ')',
+                'background-image': ''
+            }); //Set the main background and remove the filter
+            $('#nextFrost').out(700); //Fade out last image
+            //Getting the default brightness for the circle 
+            var glowBri;
+            if (data.dark)
+                glowBri = Math.min(color[2] + 50, 100);
+            else 
+                glowBri = Math.max(color[2] - 25, 0);
+        } else {
+            //Runs when album art is available
+            frost.css({
+                'background-image': 'url("' + data.albumUrl + '")',
+                'background-color': ''
+            }); //Set the background image to the album (obviously)
+            $('#nextFrost').out(750); //Fade out last image
+            $('#background').css({
+                background: 'rgba(' + (data.dark ? '0,0,0' : '255,255,255') + ',0.15)'
+            }); //Fading the background so you can see the UI Elements
+        }
+    },
+    
+    
+    "strokeAndFill": function(selector, color) { //Colors the inside of SVG
+        var e = $('g > :not(g)', selector);
+        e.each(function() {
+            var el = $(this);
+            var fillClr = el.css('fill');
+            if (!fillClr.match(/none|transparent|(rgba\(([0-9]+(\.[0-9]+)?, ?){3}0(\.0+)?\))/))
+                el.css('fill', color);
+        });
+        e.css('stroke', color);
+    },
+
+
+    "feedbackFill": function(like, fill) { //Fills inside of hearts
+        var parentObj = like ? $('#like') : $('#dislike');
+        var svgFill = parentObj.contents().find('path');
+        svgFill.css({
+            fill: fill ? svgFill.first().css('stroke') : 'transparent'
+        });
+        var feedbackStr = 'feedback("';
+        if (fill)  feedbackStr += 'un';
+        if (!like) feedbackStr += 'dis';
+        feedbackStr += 'like")';
+        parentObj.attr('onclick', feedbackStr);
+    },
+    
+    
+    "tick": function() {  //Animations Visualizations
+        //Runs each tick when music is playing
+        //Throttle tick function to {ear.refresh}ms to maintain framerate
+        //Also skip if the animations aren't visible
+        if (
+            Date.now() - ear.lastTick <= ear.refresh ||
+            $('.view:not(.frosty):visible').length
+        ) {
+            //Queue this function for the next frame and exit
+            if (isRunning) requestAnimationFrame(UI.tick);
+            return;
+        }
+        ear.lastTick = Date.now();
+        //Load sound volume
+        ear.analyser.getByteFrequencyData(ear.frequencies);
+        //Get average volume
+        var avg = 0;
+        //Ignore all but first 80 to prevent pollution from drums
+        for (var i = 0; i < 80; i++) avg += ear.frequencies[i];
+        //Treat the rest as zeros
+        avg /= ear.frequencies.length;
+        avg *= 4; //Change this to make the circle more sensitive
+        
+        var hslVal, bri;
+        if (light)
+            bri = (((color[2] + (100 - avg*0.75))/2 - 10)*ratio + (100 - avg))*(1 - ratio);
+        else
+            bri = Math.max((color[2] + avg*0.75 + 25)/3, color[2] + 25)*ratio + avg*(1 - ratio);
+        if (hasAlbum) {
+            body.css('background', 'hsl(' + 
+                color[0] + ',' + parseFloat(color[1])*0.8 + '%,' + bri
+            + '%)'); //Add colored background edges is there's an album image
+        } else {
+            bkg.css('background-image',
+                'radial-gradient(circle closest-side, hsla(' + 
+                color[0] + ',' + parseFloat(color[1])*0.8 + '%,' + bri + '%, 0.25) ' + 
+                avg + '%, hsl(' + color.join(',') + '%) 95%)'
+            ); //Add circle to background if there's no album image
+        }
+        //Rerun this function next frame if music is playing
+        if (isRunning) requestAnimationFrame(UI.tick);
+    }
+};
+
+//III - Tab Bar Animations
+//------------------------
 
 var worker = new Worker('/js/worker.js');
 var workerTimer = {
@@ -75,6 +388,9 @@ var workerTimer = {
 };
 worker.onmessage = workerTimer.onMessage.bind(workerTimer);
 
+//IV - Cookies & Options
+//----------------------
+
 //Default: '' (false)
 //1st Time can set to 'force' (true)
 //If not 'force', user can set to 'yes' (true) or 'no' (false)
@@ -86,6 +402,13 @@ if (!new Audio().canPlayType("audio/mp4; codecs=\"mp4a.40.2\"").replace('no', ''
     options.audioWorkaround = false; //Default
 } else {
     options.audioWorkaround = wrkCookie; //force or yes
+}
+if (!options.audioWorkaround) {
+    $('#togWorkaround').removeAttr('checked');
+} else {
+    $('#togWorkaround').attr('checked', 'checked');
+    if (options.audioWorkaround == 'force')
+        $('#togWorkaround').attr('disabled', 'disabled');
 }
 //Default: '' 
 var hueCookie = Cookies.get('hueip');
@@ -106,6 +429,10 @@ if (visCookie != 'force' && !AudioContext && !webkitAudioContext) {
 } else {
     options.novisuals = visCookie;
 }
+
+//V - Error Handling
+//------------------
+
 
 window.addEventListener('error', function(err) {
     if (errors.length > 50) return;
@@ -134,69 +461,6 @@ function bugReport() {
 }
 Mousetrap.bind('ctrl+shift+/', bugReport);
 
-vex.defaultOptions.className = 'vex-theme-flat-attack';
-$.fn.extend({
-    in: function(len) {
-        $(this)
-            .show(0)
-            .animate({opacity: 1}, len || 350)
-        ;
-        return this;
-    },
-    out: function(len) {
-        return $(this)
-            .animate({opacity: 0}, len || 350)
-            .delay(len || 350)
-            .hide(0)
-        ;
-    }
-})
-
-function strokeAndFill(selector, color) {
-    var e = $('g > :not(g)', selector);
-    e.each(function() {
-        var el = $(this);
-        var fillClr = el.css('fill');
-        if (fillClr != 'none' && fillClr != 'transparent' && fillClr.slice(0, 4) != 'rgba')
-            el.css('fill', color);
-    });
-    e.css('stroke', color);
-}
-
-function feedbackFill(like, fill) {
-    var parentObj = like ? $('#like') : $('#dislike');
-    var svgFill = parentObj.contents().find('path');
-    svgFill.css({
-        fill: fill ? svgFill.first().css('stroke') : 'transparent'
-    });
-    var feedbackStr = 'feedback("';
-    if (fill)  feedbackStr += 'un';
-    if (!like) feedbackStr += 'dis';
-    feedbackStr += 'like")';
-    parentObj.attr('onclick', feedbackStr);
-}
-
-var showLike = [
-    function(song, cb) { //NEUTRAL
-        if (song) song.likeStatus = likeStatus.NEUTRAL;
-        feedbackFill(true , false);
-        feedbackFill(false, false);
-    },
-    function(song, cb) { //LIKE
-        if (song) song.likeStatus = likeStatus.LIKE;
-        feedbackFill(true , true );
-        feedbackFill(false, false);
-    },
-    function(song, cb) { //DISLIKE
-        if (song) song.likeStatus = likeStatus.DISLIKE;
-        feedbackFill(true , false);
-        feedbackFill(false, true );
-    }
-];
-
-//Used for mobile debugging
-//var report = window.onerror;
-//window.onerror = function() {alert(Array.prototype.slice.call(arguments).join('\n'));};
 
 var maxErrors = 20;
 var curErrors = 0;
@@ -271,6 +535,26 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
     }
 };
 
+//VI - Utilities
+//--------------
+
+$.fn.extend({
+    in: function(len) {
+        $(this)
+            .show(0)
+            .animate({opacity: 1}, len || 350)
+        ;
+        return this;
+    },
+    out: function(len) {
+        return $(this)
+            .animate({opacity: 0}, len || 350)
+            .delay(len || 350)
+            .hide(0)
+        ;
+    }
+});
+
 function encodeForURI(input) {
     return encodeURIComponent(input)
         .replace( /\(/g, "%28")
@@ -279,12 +563,65 @@ function encodeForURI(input) {
     ;
 }
 
-//This is probably a really bad idea
-function devTest(str) {
-    var parts = str.split(':');
-    if (parts.length != 3) return;
-    $('.' + parts[0].replace(/[^a-zA-Z]*/g, '')).css(parts[1], parts[2]);
+if (!String.prototype.format) {
+    String.prototype.format = function() {
+        var args = arguments;
+        return this.replace(/{(\d+)}/g, function(match, number) {
+            return typeof args[number] !== 'undefined' ? args[number] : match;
+        });
+    };
 }
+
+
+//VII - Feedback
+//--------------
+
+var showLike = [
+    function(song, cb) { //NEUTRAL
+        if (song) song.likeStatus = likeStatus.NEUTRAL;
+        UI.feedbackFill(true , false);
+        UI.feedbackFill(false, false);
+    },
+    function(song, cb) { //LIKE
+        if (song) song.likeStatus = likeStatus.LIKE;
+        UI.feedbackFill(true , true );
+        UI.feedbackFill(false, false);
+    },
+    function(song, cb) { //DISLIKE
+        if (song) song.likeStatus = likeStatus.DISLIKE;
+        UI.feedbackFill(true , false);
+        UI.feedbackFill(false, true );
+    }
+];
+
+var feedback = $.debounce(5000, true, function(opinion, songIndex) {
+    lock();
+    var sng = songs[songIndex || curSong];
+    var status = null;
+    switch(opinion) {
+        case 'dislike':
+            status = likeStatus.DISLIKE;
+        break;
+        case 'undislike':
+            status = likeStatus.NEUTRAL;
+        break;
+        case 'like':
+            status = likeStatus.LIKE;
+        break;
+        case 'unlike':
+            status = likeStatus.NEUTRAL;
+        break;
+    }
+    if (status !== null) showLike[status](sng);
+    $.ajax(
+        base + '/feedback/' + (sng.station || curStation) + '/' + opinion + '/' + sng.id
+    ).done(function() {
+        if (status == likeStatus.DISLIKE) next(); else unlock();
+    });
+});
+
+//VIII - UI Locking
+//-----------------
 
 function lock() {
     $('#lockOverlay').css('opacity', 1);
@@ -301,6 +638,45 @@ function unlock() {
     locked = false;
 }
 
+function loadAnimate(time, bubbles) {
+    intervalStep = 0;
+    var circles = $('#ellipsis').contents().find('circle');
+    circles.css('fill', 'transparent');
+    return setInterval(function() {
+        requestAnimationFrame(function() {
+            var elem = circles.eq(Math.floor(intervalStep));
+            elem.css('fill', (intervalStep % 1) ? 'transparent' :  elem.css('stroke'));
+            intervalStep += 0.5;
+            intervalStep %= bubbles;
+        });
+    }, time/bubbles);
+}
+
+function initHue(ip, success, failure) {
+    Cookies.set('hueip', ip);
+    var successFunct = function() {
+        options.usingHue = true;
+        hue.initialize();
+        if (success) success();
+    };
+    $.ajax(base + '/user/huesername').done(function(uname) {
+        hue = new HueJS({
+            ipAddress: ip,
+            username: uname,
+            deviceType: 'Mesh'
+        });
+        hue.authenticate(successFunct, function(err) {
+            hue.authenticate(successFunct, function(suberr) {
+                options.usingHue = false;
+                if (failure) failure(err || suberr);
+            });
+        });
+    });
+}
+
+//IX - Color Extraction
+//---------------------
+
 function colorGen(data, cb) {
     var unColored = data[0];
     unColored.station = curStation;
@@ -315,6 +691,31 @@ function colorGen(data, cb) {
             });
             unColored.dark = primary.isDark();
             var hsvComps = primary.toHsl();
+            if (hsvComps.l > 0.825 || hsvComps.l < 0.175) {
+                var palette = colorThief.getPalette(img, 3);
+                var colors = [];
+                for (var i in palette) {
+                    colors[i] = {
+                        raw: tinycolor({
+                            r: palette[i][0],
+                            g: palette[i][1],
+                            b: palette[i][2]
+                        })
+                    };
+                    colors[i].hsl = colors[i].raw.toHsl();
+                    colors[i].harshness = Math.abs(colors[i].hsl.l - 0.5);
+                }
+                var leastHarsh = colors.reduce(function(a, b) {
+                    return Math.min(a.harshness || a, b.harshness);
+                });
+                for (var i in colors) {
+                    if (colors[i].harshness == leastHarsh) {
+                        hsvComps = colors[i].hsl;
+                        unColored.dark = colors[i].raw.isDark();
+                        break;
+                    }
+                }
+            }
             unColored.color = [];
             unColored.color.push(hsvComps.h);
             unColored.color.push(hsvComps.s * 100 + '%');
@@ -333,11 +734,47 @@ function colorGen(data, cb) {
     }
 }
 
-function chooseTheme(themeName, callback) {
-    $.getScript(base + '/js/themes/' + themeName + '.js', function() {
-        theme.init();
-        callback();
+//X - Platform Specific
+//---------------------
+
+function initHue(ip, success, failure) {
+    Cookies.set('hueip', ip);
+    var successFunct = function() {
+        options.usingHue = true;
+        hue.initialize();
+        if (success) success();
+    };
+    $.ajax(base + '/user/huesername').done(function(uname) {
+        hue = new HueJS({
+            ipAddress: ip,
+            username: uname,
+            deviceType: 'Mesh'
+        });
+        hue.authenticate(successFunct, function(err) {
+            hue.authenticate(successFunct, function(suberr) {
+                options.usingHue = false;
+                if (failure) failure(err || suberr);
+            });
+        });
     });
+}
+
+
+function squeezebox(username, password, ip, port) {
+    if (typeof ip === 'undefined') ip = 'localhost';
+    if (typeof port === 'undefined') port = 9000;
+    if (typeof cb === 'undefined') cb = $.noop;
+    var file = (base || location.protocol + '//' + location.host) + '/stations/' + btoa(username + ':' + password).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~') + '.opml';
+    window.open('http://' + ip + ':' + port + '/plugins/Favorites/index.html?' + $.param({
+        index: 2,
+        sess: 1,
+        action: 'editset',
+        removeoncancel: 1,
+        entrytitle: 'Mesh',
+        entryurl: file,
+        editset: 'Save'
+    }));
+    return file;
 }
 
 function login(cb) {
@@ -368,26 +805,14 @@ function music() {
     return musicPlayer[mIndex];
 }
 
-if (!String.prototype.format) {
-    String.prototype.format = function() {
-        var args = arguments;
-        return this.replace(/{(\d+)}/g, function(match, number) {
-            return typeof args[number] !== 'undefined' ? args[number] : match;
-        });
-    };
-}
-
 function loadStation(sid, callback) {
     var doDefault = (typeof callback === 'undefined');
-
-    if (doDefault) {
-        $('.station').removeClass('current');
-        $('.station[data-id=' + sid + ']')
-            .detach()
-            .insertAfter('#stat .container > .station:first-child')
-            .addClass('current')
-        ;
-    }
+    $('.station:not(.nowPlaying)').removeClass('current');
+    var newStat = $('.station[data-id=' + sid + ']').addClass('current');
+    $('.nowPlaying')
+        .css('background-image', newStat.css('background-image'))
+        .attr('title', newStat.attr('title'))
+    ;
 
     $.ajax(base + '/station/load/' + sid).done(function(data) {
         feedbackHistory[sid] = JSON.parse(data);
@@ -475,7 +900,7 @@ function mesh(ind, part, callback) {
             songs.push(nextData);
             curSong = ind;
             updateHistory('add', songs.length - 1);
-            updateUI(nextData);
+            UI.draw(nextData);
             nextData = undefined;
             playQueue();
             cb();
@@ -485,7 +910,7 @@ function mesh(ind, part, callback) {
         if (part & 1) load(soin);
         if (part & 2) {
             curSong = ind;
-            updateUI(soin);
+            UI.draw(soin);
             playQueue();
         }
         cb();
@@ -514,6 +939,7 @@ function deleteStation(id, event) {
         }
     });
 }
+
 
 function updateHistory(action, param) {
     switch(action) {
@@ -545,7 +971,14 @@ function updateHistory(action, param) {
                 })
             ;
             $('#song .container > div:eq(-' + (param + 1) + ')').after(
-                '<div class="song"><div data-index="{4}" onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div><span><span>"{0}"<br>{1}<br>{2}</span></span></div>'.format(
+                ('<div class="song">' +
+                    '<div data-index="{4}" onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div>' + 
+                    '<span><span>"{0}"<br>{1}<br>{2}</span></span>' +
+                    '<!--<object class="clickable inline iLike icon" data="/img/icons/heart.svg" type="image/svg+xml"></object>' +
+                    '<object class="clickable inline iDislike icon" data="/img/icons/brokenHeart.svg" type="image/svg+xml"></object>' +
+                    '<span class="clickable inline iRemove icon">&#xe600;</span>' +
+                    '<span class="clickable inline iInfo icon">&#xe602;</span>-->' +
+                '</div>').format(
                     data.songName,
                     data.artistName,
                     data.albumName === null ? '(No Album)' : data.albumName,
@@ -561,56 +994,6 @@ function updateHistory(action, param) {
     }
 }
 
-function updateUI(data, onlyColor) {
-    if (!onlyColor) updateHistory('set', curSong);
-    var fill, hoverFill, pressFill;
-    color = data.color;
-    if (color[0] === null) color[0] = 0;
-    if (data.dark) {
-        light = false;
-        $('body').addClass('light').removeClass('dark');
-        fill = "#FFF";
-        hoverFill = "#BBB";
-        pressFill = "#888";
-    } else {
-        light = true;
-        $('body').addClass('dark').removeClass('light');
-        fill = "#000";
-        hoverFill = "#444";
-        pressFill = "#555";
-    }
-    var icons = $('.icon').contents();
-    for (var i = 0; i < icons.length; i++) {
-        $('svg', icons[i]).css('cursor', 'pointer');
-        strokeAndFill(icons[i], fill);
-    }
-    $('.icon.clickable')
-        .mouseover(function(self) {
-            var context = $(self.target).contents().addBack();
-            strokeAndFill(context, hoverFill);
-        })
-        .mouseout(function(self) {
-            var context = $(self.target).contents().addBack();
-            strokeAndFill(context, fill);
-        })
-        .contents().find('svg').add('svg.icon.clickable')
-            .mousedown(function(self) {
-                strokeAndFill(self.target, pressFill);
-            })
-            .mouseup(function(self) {
-                strokeAndFill(self.target, hoverFill)
-            })
-    ;
-    if (!onlyColor) {
-        if (data.albumUrl === null)
-            $('#album').css('background-image', 'none');
-        else
-            $('#album').css('background-image', 'url("' + data.albumUrl + '")');
-        showLike[data.likeStatus || 0]();
-    }
-    theme.draw($.extend(data, {color:color}));
-}
-
 function downloadSong() {
     var el = $('<a download></a>')
         .attr('href', music().audio.src.replace('/legacy', '') + '/download')
@@ -618,17 +1001,6 @@ function downloadSong() {
     ;
     el[0].click();
     el.remove();
-}
-
-function nextUp(data) {
-    var upNext = $('.next.song');
-    upNext.data('song', data);
-    upNext.find('div').css('background-image', 'repeating-linear-gradient(135deg, transparent, transparent 0.25em, rgba(127,127,127, 0.5) 0.25em, rgba(127,127,127, 0.5) 0.5em), url(' + data.albumUrl + ')');
-    upNext.find('span span').html('"{0}"<br>{1}<br>{2}'.format(
-        data.songName,
-        data.artistName,
-        data.albumName === null ? '(No Album)' : data.albumName
-    ));
 }
 
 function newSong(cb, skip) {
@@ -650,8 +1022,10 @@ function newSong(cb, skip) {
                     break;
                 }
             }
+            if (curSong !== 0) load(second);
+            nextPreview = second;
+            if (curSong === 0) UI.preview();
             cb(first);
-            nextUp(second);
         });
     });
 }
@@ -669,35 +1043,12 @@ function load(data) {
         };
     }
     nxtPlayer.audio.addEventListener('error', onNoSong);
-    nxtPlayer.audio.src = srcUrl + (options.audioWorkaround ? '/legacy' : '');
-    nxtPlayer.audio.load();
-}
-
-var feedback = $.debounce(5000, true, function(opinion, songIndex) {
-    lock();
-    var sng = songs[songIndex || curSong];
-    var status = null;
-    switch(opinion) {
-        case 'dislike':
-            status = likeStatus.DISLIKE;
-        break;
-        case 'undislike':
-            status = likeStatus.NEUTRAL;
-        break;
-        case 'like':
-            status = likeStatus.LIKE;
-        break;
-        case 'unlike':
-            status = likeStatus.NEUTRAL;
-        break;
+    if (options.audioWorkaround) srcUrl += '/legacy';
+    if (nxtPlayer.audio.src != srcUrl) {
+        nxtPlayer.audio.src = srcUrl;
+        nxtPlayer.audio.load();
     }
-    if (status !== null) showLike[status](sng);
-    $.ajax(
-        base + '/feedback/' + (sng.station || curStation) + '/' + opinion + '/' + sng.id
-    ).done(function() {
-        if (status == likeStatus.DISLIKE) next(); else unlock();
-    });
-});
+}
 
 $(document).mousemove($.throttle(25, function(e) {
 	if (!sidebar) return;
@@ -716,13 +1067,14 @@ $(document).mousemove($.throttle(25, function(e) {
             $.sidr('close', 'song');
 	}
 	var div = side.find('.container');
-	if (e.pageY < $(window).height()*0.25) {
+	var ofs = $('#stat .container').offset().top;
+	if (e.pageY < $(window).height()*0.25 + ofs && e.pageY > ofs) {
 		if (!onUp) {
 			onUp = true;
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalUp = setInterval(function() {
 			    if (side.find('.slimScrollRail:hover,.slimScrollBar:hover').length) return;
-				var sub = (1 - my / ($(window).height() * 0.25)) * 7.5;
+				var sub = (1 - (my - ofs) / ($(window).height() * 0.25)) * 10;
 				if (div.scrollTop() >= sub) div.slimScroll({
 					scrollBy: -sub + 'px',
 					alwaysVisible: true,
@@ -742,7 +1094,7 @@ $(document).mousemove($.throttle(25, function(e) {
 			maxHeight = div.prop("scrollHeight") - div.height();
 			intervalDown = setInterval(function() {
 			    if (side.find('.slimScrollRail:hover,.slimScrollBar:hover').length) return;
-				var sub = (my - $(window).height() * 0.75) / ($(window).height() * 0.25) * 7.5;
+				var sub = (my - $(window).height() * 0.75) / ($(window).height() * 0.25) * 10;
 				if (div.scrollTop() <= (maxHeight - sub))
 				    div.slimScroll({
 				        scrollBy: sub + 'px',
@@ -765,7 +1117,7 @@ function play() {
     $('#background').removeClass('paused');
     music().audio.play({ playAudioWhenScreenIsLocked: true });
     isRunning = true;
-    if (!options.novisuals) theme.tick();
+    if (!options.novisuals) UI.tick();
 }
 
 function pause() {
@@ -803,7 +1155,7 @@ function initWithStation(index) {
             load(data);
             songs.push(data);
             updateHistory('add', 0);
-            updateUI(data);
+            UI.draw(data);
             $('#loading').fadeOut(350, playQueue);
         });
     });
@@ -821,9 +1173,9 @@ function getStations() {
             initWithStation(data.lastStation);
         } else {
             showSearch('firstStation');
-            $('#loading').css('z-index', 2);
+            $('#loading').css('z-index', 3);
             colorGen([{}], function(data) {
-                updateUI(data, true);
+                UI.draw(data, true);
             });
         }
     });
@@ -837,12 +1189,15 @@ function timeUpdate() {
     if (pb) progBar.val(elapsed/total);
 
     if (
+        songs[curSong] &&
         document.title.slice(7) == songs[curSong].songName &&
         remaining < (15.375 + songs[curSong].songName.replace(/ /g, '').length*0.075)
     ) {
         document.title = document.title.slice(0, -1);
         var rebuilding = false;
+        if (tabid !== null) workerTimer.clearInterval(tabid);
         var clearTitle = workerTimer.setInterval(function() {
+            tabid = clearTitle;
             if (document.title.length > 7 && !rebuilding) {
                 document.title = document.title.slice(0, -1);
             } else {
@@ -852,6 +1207,7 @@ function timeUpdate() {
                     return;
                 }
                 if (document.title.length > 11) {
+                    tabid = null;
                     return workerTimer.clearInterval(clearTitle);
                 }
                 document.title += "0:15"[document.title.length - 8];
@@ -883,23 +1239,6 @@ function timeUpdate() {
     }
 }
 
-function squeezebox(username, password, ip, port) {
-    if (typeof ip === 'undefined') ip = 'localhost';
-    if (typeof port === 'undefined') port = 9000;
-    if (typeof cb === 'undefined') cb = $.noop;
-    var file = (base || location.protocol + '//' + location.host) + '/stations/' + btoa(username + ':' + password).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '~') + '.opml';
-    window.open('http://' + ip + ':' + port + '/plugins/Favorites/index.html?' + $.param({
-        index: 2,
-        sess: 1,
-        action: 'editset',
-        removeoncancel: 1,
-        entrytitle: 'Mesh',
-        entryurl: file,
-        editset: 'Save'
-    }));
-    return file;
-}
-
 function init() {
     songs[-1] = {
         songName: 'Radio'
@@ -916,7 +1255,7 @@ function init() {
             mp.audioSrc.connect(ear.analyser);
         }
         ear.analyser.connect(ear.context.destination);
-        theme.tick();
+        UI.tick();
     } else {
         musicPlayer[0].audio.addEventListener('timeupdate', timeUpdate);
         musicPlayer[1].audio.addEventListener('timeupdate', timeUpdate);
@@ -940,6 +1279,21 @@ function init() {
             loadStation(target[0].dataset.id);
         }
     }));
+    
+    $('.nowPlaying')
+        .mouseenter(function() {
+            var elem = $(this);
+            setTimeout(function() {
+                elem.addClass('showName');
+            }, 350);
+        })
+        .mouseleave(function() {
+            var elem = $(this);
+            setTimeout(function() {
+                elem.removeClass('showName');
+            }, 350);
+        })
+    ;
 
     $('#stations').sidr({
         side: 'left',
@@ -948,13 +1302,11 @@ function init() {
             sidebar = 1;
             var fillElem = $('#stations').contents().find('.fillMe');
             fillElem.css('fill', fillElem.css('stroke'));
-            theme.sidebar(sidebar);
         },
         onClose: function() {
             sidebar = 0;
             var fillElem = $('#stations').contents().find('.fillMe');
             fillElem.css('fill', 'transparent');
-            theme.sidebar(sidebar);
         },
         body: '#player,#frost'
     });
@@ -966,13 +1318,11 @@ function init() {
             sidebar = 2;
             var fillElem = $('#songs').contents().find('.fillMe');
             fillElem.css('fill', fillElem.css('stroke'));
-            theme.sidebar(sidebar);
         },
         onClose: function() {
             sidebar = 0;
             var fillElem = $('#songs').contents().find('.fillMe');
             fillElem.css('fill', 'transparent');
-            theme.sidebar(sidebar);
         }
     });
 
@@ -999,42 +1349,6 @@ function init() {
     initSearch();
     initFilters();
 };
-
-function initHue(ip, success, failure) {
-    Cookies.set('hueip', ip);
-    var successFunct = function() {
-        options.usingHue = true;
-        hue.initialize();
-        if (success) success();
-    };
-    $.ajax(base + '/user/huesername').done(function(uname) {
-        hue = new HueJS({
-            ipAddress: ip,
-            username: uname,
-            deviceType: 'Mesh'
-        });
-        hue.authenticate(successFunct, function(err) {
-            hue.authenticate(successFunct, function(suberr) {
-                options.usingHue = false;
-                if (failure) failure(err || suberr);
-            });
-        });
-    });
-}
-
-function loadAnimate(time, bubbles) {
-    intervalStep = 0;
-    var circles = $('#ellipsis').contents().find('circle');
-    circles.css('fill', 'transparent');
-    return setInterval(function() {
-        requestAnimationFrame(function() {
-            var elem = circles.eq(Math.floor(intervalStep));
-            elem.css('fill', (intervalStep % 1) ? 'transparent' :  elem.css('stroke'));
-            intervalStep += 0.5;
-            intervalStep %= bubbles;
-        });
-    }, time/bubbles);
-}
 
 $(window).load(function() {
     $('.icon.clickable').each(function() {
@@ -1079,7 +1393,7 @@ $(window).load(function() {
         size: '1em',
         position: 'left',
         width: '100%',
-        height: '100%',
+        height: 'calc(100vh - 12.125em)',
         alwaysVisible: true,
         railVisible: true,
         railOpacity: 0.3,
@@ -1091,17 +1405,17 @@ $(window).load(function() {
     $('#loadLogo').contents().find('g, g > *').css('fill', '#333');
     $('#songs').contents().find('svg')
         .on('touchstart click', function() {
-            $.sidr((sidebar == 0) ? 'open' : 'close', 'song');
+            $.sidr((sidebar === 0) ? 'open' : 'close', 'song');
         })
-        .on('mouseover', function() {
+        .on('mouseenter', function() {
             $.sidr('open', 'song');
         })
     ;
     $('#stations').contents().find('svg')
         .on('touchstart click', function() {
-            $.sidr((sidebar == 0) ? 'open' : 'close', 'stat');
+            $.sidr((sidebar === 0) ? 'open' : 'close', 'stat');
         })
-        .on('mouseover', function() {
+        .on('mouseenter', function() {
             $.sidr('open', 'stat');
         })
     ;
@@ -1117,15 +1431,11 @@ function showOptions(visible) {
     }
 }
 
-function domLoaded() {
+$(document).ready(function() {
     progBar = $('#progress');
     body = $('body');
     bkg = $('#background');
-}
-
-$(document).ready(function() {
-    domLoaded();
-    chooseTheme("frostedGlass", init);
+    init();
 });
 
 $(document).on("keydown", function (e) {

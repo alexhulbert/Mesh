@@ -91,10 +91,13 @@ function showFilter(type, opt) {
     currentFilter.in();
     if (opt === true) {
         $('#filterView').in();
-        vex.dialog.alert(
-            'IMPORTANT: Filters are currently not production-ready.\n' +
-            'They may cause serious problems or bugs, so proceed with caution.'
-        );
+        if (!Cookies.get('filterWarning')) {
+            vex.dialog.alert(
+                'IMPORTANT: Filters are currently not production-ready.\n' +
+                'They may cause serious problems or bugs, so proceed with caution.'
+            );
+            Cookies.set('filterWarning', 'shown');
+        }
     }
 }
 

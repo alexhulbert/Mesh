@@ -66,6 +66,7 @@ var stationLoad = function(req, res) {
                 session_catalog: curStation.id,
                 distribution: 'wandering',
                 adventurousness: 0.5,
+                variety: 0.75,
                 limited_interactivity: true
             };
             var remainingParams = {};

@@ -48,9 +48,9 @@ router.get('/feedback/:sid/:funct/:song?/:rating?', require('../user/isAuthentic
             break;
             case 'rate':
                 if (
-                        req.params.rating > 10 ||
-                        req.params.rating < 0  ||
-                        isNaN(req.params.rating)
+                    req.params.rating > 10 ||
+                    req.params.rating < 0  ||
+                    isNaN(req.params.rating)
                 ) return req.end('0');
                 data.rate_song = song + '^' + req.params.rating;
             break;

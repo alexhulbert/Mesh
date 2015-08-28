@@ -43,7 +43,7 @@
       if(typeof elementClass === 'string' && '' !== elementClass && 'sidr-inner' !== elementClass) {
         $element.attr('class', elementClass.replace(/([A-Za-z0-9_.\-]+)/g, 'sidr-class-$1'));
       }
-      $element.removeAttr('style');
+      //$element.removeAttr('style');
     },
     execute: function(action, name, callback) {
       // Check arguments
@@ -162,12 +162,12 @@
         }
         $body.addClass('sidr-animating').animate(bodyAnimation, speed).removeClass(bodyClass);
         $menu.animate(menuAnimation, speed, function() {
-          $menu.removeAttr('style').hide();
+          $menu/*.removeAttr('style')*/.hide();
           $body.css({
             left:  'auto',
             right: 'auto'
           });
-          $('html').removeAttr('style');
+          //$('html').removeAttr('style');
           sidrMoving = false;
           sidrOpened = false;
           // Callback

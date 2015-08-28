@@ -32,6 +32,7 @@ GLOBAL.stream = function(req, res) {
     }, function(err, json) {
         var fallback = function() {
             //TODO: Add other audio services
+            //Add SoundCloud Fetcher Here
             res.end(req.params.dowhat == 'metadata' ? '0' : '');
         };
         var blacklist = ['remake', 'cover', 'full album'];
