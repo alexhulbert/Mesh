@@ -13,7 +13,7 @@ block scripts
  | /js/lib/nlform.js
  | /js/lib/fancyInput.js
  | /js/lib/tinyColor.js
- | /js/lib/please.js
+ | /js/lib/randomColor.js
  | /js/lib/cookies.js
  | /js/lib/vex.combined.min.js
  | /js/searchView.js dynamic
@@ -69,6 +69,9 @@ block content
     #prompt WHAT MUSIC DO YOU WANT TO HEAR?
     #clip
       #container(style='margin-top: -1em')
+        .galbum.ggenre(title='Albums')
+        .gartist(title='Artists')
+        .gsong(title='Songs')
     section#answer
       span#cancel.clickable &#xe600;
       .fancyInput
@@ -111,4 +114,4 @@ block content
       span.cap  Built Using
       br
       span.name The Echonest
-    #version v0.8.8 "Xochipilli"
+    #version v0.8.9 "Laka"

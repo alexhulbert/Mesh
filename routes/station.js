@@ -64,9 +64,9 @@ var stationLoad = function(req, res) {
                 seed_catalog: curStation.id,
                 type: 'catalog-radio',
                 session_catalog: curStation.id,
-                distribution: 'wandering',
-                adventurousness: 0.5,
-                variety: 0.75,
+                distribution: 'focused',
+                adventurousness: 1,
+                variety: 1,
                 limited_interactivity: true
             };
             var remainingParams = {};
@@ -200,6 +200,13 @@ var stationLoad = function(req, res) {
                        + recentlyPlayed.join('&invalidate_song=')
             ;
             request(reqStr, function(err, resp, body) {
+                var status = JSON.parse(body);
+                if (status.response.status.code) {
+                    var sid = status.response.status.message.match(/SO([A-Z0-9]{16})/g)[0];
+                    //Remove if in "topPlayed" or "recent"
+                    //Add ${sid} to user::blacklist as string
+                }
+                if (err) console.log(err);
                 res.end(JSON.stringify({
                     session: sessid,
                     likes: feedbackData.likes,

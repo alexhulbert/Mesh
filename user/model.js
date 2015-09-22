@@ -38,6 +38,7 @@ var userSchema = mongoose.Schema({
     recent: String,
     bookmarks: String,
     uuid: String,
+    blacklist: String,
     mostPlayed: mongoose.Schema.Types.Mixed
 });
 

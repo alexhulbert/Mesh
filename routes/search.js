@@ -73,8 +73,16 @@ GLOBAL.updateList = function(type, items, next) {
 };
 
 router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), function(req, res) {
+    var sendEvent = function(data, event) {
+        res.write('event: ' + (event || 'data') + '\n');
+        res.write('data: ' + JSON.stringify(data) + '\n\n');
+    }
+    
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.write('\n');
     var query = req.params.query.replace(/\n/g, '/');
-    var data = [];
     async.waterfall([
         function(next) { //Query genres
             if (req.params.noGenres) return next(null, []);
@@ -112,7 +120,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                                     img: img
                                 };
                                 if (album.mbid) albumObj.id = album.mbid;
-                                data.push(albumObj);
+                                sendEvent(albumObj);
                             }
                             next(null);
                         },
@@ -125,7 +133,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                 for (var i in genres) {
                     var genre = genres[i];
                     if (query.toLowerCase().replace(/[^a-zA-Z0-9]/g, '') == genre.replace(/[^a-zA-Z0-9]/g, '')) {
-                        data.push({
+                        sendEvent({
                             type: 'genre',
                             name: genre,
                             id: "GN" + i,
@@ -156,7 +164,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                         break;
                     }
                 }
-                data.push({
+                sendEvent({
                     type: 'artist',
                     name: jra.name,
                     id: jra.id,
@@ -189,7 +197,7 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                     played.push(jrs.artist_name + ':' + jrs.title);
                 }
             }
-            async.concat(tempData, function(song, cb) {
+            async.each(tempData, function(song, cb) {
                 var duplicate = JSON.parse(JSON.stringify(song)); //Async.each acts sketchy sometimes. Better safe than sorry.
                 duplicate.img = "/img/noAlbum.png";
                 lastfm.request('track.getInfo', {
@@ -203,24 +211,23 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                                 if (str.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') !== 0)
                                     duplicate.img = str;
                             }
-                            cb(null, duplicate);
+                            sendEvent(duplicate);
+                            cb();
                         },
                         error: function(err) {
-                            cb(null, duplicate);
+                            sendEvent(duplicate);
+                            cb();
                         }
                     }
                 });
             }, next);
-        },
-        function(searchResults, next) {
-            res.json(data.concat(searchResults));
-            next(null);
         }
     ], function(err) {
         if (err) {
             console.log(err);
-            res.json(data);
         }
+        sendEvent('DONE', 'done');
+        res.end();
     });
 });
 

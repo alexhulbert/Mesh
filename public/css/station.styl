@@ -82,6 +82,19 @@
   vendor(box-sizing, border-box)
   padding 1em
   opacity 0
+  display flex
+  > div
+    flex 1
+    &::before
+      content attr(title)
+      font-size 2em
+      margin-top 0.75em
+      margin-left 0.75em
+      border-bottom 2px solid
+      display block
+      padding-bottom 5px
+    &:last-child::before
+      margin-right 0.75em
 #clip > .slimScrollDiv
   top 45vh
   margin-top 0.5em

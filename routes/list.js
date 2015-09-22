@@ -44,6 +44,7 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
         };
 
         if (moment(station.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq) || !station.bootstrapped) {
+            console.log('!');
             station.bootstrapped = true;
             echo('tasteprofile/read').get({
                 bucket: 'images',

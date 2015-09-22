@@ -292,7 +292,7 @@ var UI = {
         e.each(function() {
             var el = $(this);
             var fillClr = el.css('fill');
-            if (!fillClr.match(/none|transparent|(rgba\(([0-9]+(\.[0-9]+)?, ?){3}0(\.0+)?\))/))
+            if (fillClr && !fillClr.match(/none|transparent|(rgba\(([0-9]+(\.[0-9]+)?, ?){3}0(\.0+)?\))/))
                 el.css('fill', color);
         });
         e.css('stroke', color);
@@ -421,7 +421,7 @@ if (hueCookie) {
 //1st time can be set to 'force' (novisuals/true)
 //If not 'force', user can set to 'yes' (novisuals) or 'no' (visuals)
 var visCookie = Cookies.get('novisuals');
-if (visCookie != 'force' && !AudioContext && !webkitAudioContext) {
+if (visCookie != 'force' && typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
     options.novisuals = 'force';
     Cookies.set('novisuals', 'force');
 } else if (wrkCookie == 'no' || typeof wrkCookie === 'undefined') {
@@ -538,18 +538,30 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
 //VI - Utilities
 //--------------
 
+//EventSource Abstraction
+function absorb(url, cb, onend,  terminate, ev) {
+    var es = new EventSource(url);
+    es.addEventListener(ev || 'data', function(event) {
+        cb(JSON.parse(event.data), event.event);
+    });
+    es.addEventListener(terminate || 'done', function(event) {
+        es.close();
+        onend();
+    })
+}
+
 $.fn.extend({
     in: function(len) {
         $(this)
             .show(0)
-            .animate({opacity: 1}, len || 350)
+            .animate({opacity: 1}, len || 150)
         ;
         return this;
     },
     out: function(len) {
         return $(this)
-            .animate({opacity: 0}, len || 350)
-            .delay(len || 350)
+            .animate({opacity: 0}, len || 150)
+            .delay(len || 150)
             .hide(0)
         ;
     }
@@ -724,12 +736,16 @@ function colorGen(data, cb) {
         };
         img.src = unColored.albumUrl;
     } else {
-        var randColor = tinycolor(Please.make_color({ seed: unColored.id })[0]);
-        var clr = randColor.toHsl();
+        var randColor = randomColor({
+            luminosity: 'dark',
+            seed: parseInt(unColored.id.substring(2), 36),
+            format: 'hslArray'
+        });
         unColored.color = [];
-        unColored.color.push(clr.h);
-        unColored.color.push(clr.s * 100 + '%');
-        unColored.color.push(clr.l * 100);
+        unColored.color.push(randColor[0]);
+        unColored.color.push(randColor[1] + '%');
+        unColored.color.push(randColor[2]);
+        unColored.dark = true;
         cb(unColored, data[1]);
     }
 }
@@ -806,7 +822,6 @@ function music() {
 }
 
 function loadStation(sid, callback) {
-    var doDefault = (typeof callback === 'undefined');
     $('.station:not(.nowPlaying)').removeClass('current');
     var newStat = $('.station[data-id=' + sid + ']').addClass('current');
     $('.nowPlaying')
@@ -817,13 +832,11 @@ function loadStation(sid, callback) {
     $.ajax(base + '/station/load/' + sid).done(function(data) {
         feedbackHistory[sid] = JSON.parse(data);
         curStation = sid;
-        if (doDefault) {
+        if (typeof callback === 'undefined') {
             isRunning = true;
-            next(false);
+            next();
             play();
-        } else {
-            callback();
-        }
+        } else callback();
         unlock();
     });
 }
@@ -974,10 +987,10 @@ function updateHistory(action, param) {
                 ('<div class="song">' +
                     '<div data-index="{4}" onclick="mesh({4}, 3, function() {});" style="background-image: url({3})"></div>' + 
                     '<span><span>"{0}"<br>{1}<br>{2}</span></span>' +
-                    '<!--<object class="clickable inline iLike icon" data="/img/icons/heart.svg" type="image/svg+xml"></object>' +
+                    '<object class="clickable inline iLike icon" data="/img/icons/heart.svg" type="image/svg+xml"></object>' +
                     '<object class="clickable inline iDislike icon" data="/img/icons/brokenHeart.svg" type="image/svg+xml"></object>' +
                     '<span class="clickable inline iRemove icon">&#xe600;</span>' +
-                    '<span class="clickable inline iInfo icon">&#xe602;</span>-->' +
+                    '<span class="clickable inline iInfo icon">&#xe602;</span>' +
                 '</div>').format(
                     data.songName,
                     data.artistName,
@@ -1148,7 +1161,8 @@ function appendStation(station) {
 }
 
 function initWithStation(index) {
-    $('.station[data-id=' + index  + ']').addClass('current');
+    if (typeof index === 'number')
+        $('.station[data-id=' + index  + ']').addClass('current');
     loadStation(index, function() {
         mIndex = +!mIndex;
         newSong(function(data) {
@@ -1174,9 +1188,10 @@ function getStations() {
         } else {
             showSearch('firstStation');
             $('#loading').css('z-index', 3);
-            colorGen([{}], function(data) {
+            colorGen([{id: "SO"+Date.now().toString(36)}], function(data) {
                 UI.draw(data, true);
             });
+            $('#loading').out(350);
         }
     });
 }
@@ -1262,14 +1277,14 @@ function init() {
     }
     getStations();
 
-    var blur = 'blur(96px)';
+    
     if (typeof InstallTrigger !== 'undefined')  {
         //FireFox doesn't support direct blur filter yet (only svgs)
-        blur = 'url("/img/filters.svg#';
+        var blur = 'url("/img/filters.svg#';
         blur += (navigator.appVersion.indexOf("Win") != -1) ? 'win' : 'mac';
         blur += 'Blur")';
+        $('.frost').css('filter', blur);
     }
-    $('.frost').css('filter', blur);
 
     con = $('#stat .container');
     con.click($.debounce(5000, true, function(e) {
@@ -1285,13 +1300,13 @@ function init() {
             var elem = $(this);
             setTimeout(function() {
                 elem.addClass('showName');
-            }, 350);
+            }, 150);
         })
         .mouseleave(function() {
             var elem = $(this);
             setTimeout(function() {
                 elem.removeClass('showName');
-            }, 350);
+            }, 150);
         })
     ;
 
@@ -1393,7 +1408,6 @@ $(window).load(function() {
         size: '1em',
         position: 'left',
         width: '100%',
-        height: 'calc(100vh - 12.125em)',
         alwaysVisible: true,
         railVisible: true,
         railOpacity: 0.3,
@@ -1423,11 +1437,11 @@ $(window).load(function() {
 
 function showOptions(visible) {
     if (visible) {
-        $('#player').animate({ opacity: 0 }, 350);
+        $('#player').animate({ opacity: 0 }, 150);
         $('#options').in();
     } else {
         $('#options').out();
-        $('#player').animate({ opacity: 1 }, 350);
+        $('#player').animate({ opacity: 1 }, 150);
     }
 }
 

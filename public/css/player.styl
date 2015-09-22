@@ -23,7 +23,7 @@
   vendor(transition, opacity 350ms)
   position fixed
   &.visible
-    opacity 1f
+    opacity 1
 #player
   height 100%
 #searchSong,#filterBtn
@@ -98,7 +98,8 @@
   background-position center
   vendor(transform, translate3d(0, 0, 0))
   position absolute
-  -webkit-filter blur(96px)
+  -webkit-filter blur(96px) !important
+  filter blur(96px) !important
 #nextFrost
   display none
   opacity 0
@@ -178,13 +179,15 @@
     pointer-events none
   .container
     width 100%
-    height 100%
+    height 100% !important
     position absolute
     overflow-y scroll
     overflow-x hidden
     overflow-y -moz-hidden-unscrollable
     &::-webkit-scrollbar
       display none
+  .station + .slimScrollDiv
+    height calc(100% - 12.125em) !important
 #stat
   left -22.5em
   .container
@@ -245,7 +248,7 @@
   z-index 3
   border-radius 50%
   &:not(.add) div
-    vendor(transition, background-size 350ms)
+    vendor(transition, background-size 150ms)
   &:hover:not(.add):not(.nowPlaying) div
     background-size 125% 125%
   &:nth-child(2)
@@ -284,7 +287,7 @@
   span:not(.inline)
     font-size 4em
     box-shadow 0 0 3px
-    vendor(transition, "margin 350ms, opacity 350ms ease-out")
+    vendor(transition, "margin 150ms, opacity 150ms ease-out")
     z-index -1
     opacity 0
     position absolute
@@ -360,6 +363,7 @@
     width 1em
     height 1em
     font-size 3.5em
+    display none !important //Not Done Yet
   .inline.iLike, .inline.iDislike
     left 3em
     padding-right 0.15em
@@ -410,14 +414,14 @@
 .nowPlaying
   margin 1.25em auto 3em !important
   cursor default
-  vendor(transition, background-image 350ms)
+  vendor(transition, background-image 150ms)
   div::before
     top 0
     height 12.5em
   &::after
     pointer-events none
     content 'Now Playing'
-    vendor(animation, unblink 700ms)
+    vendor(animation, unblink 300ms)
   &.showName::after
     content attr(title)
   &:hover::after

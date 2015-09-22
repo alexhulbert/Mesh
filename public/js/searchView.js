@@ -9,7 +9,8 @@ function albumToUrl(url, cb) {
     if (url == '/img/noAlbum.png') return cb(url);
     var toAlbumId = [
         [/^.*amazon\.com\/images\/P\/(.+?)\.([a-z]{3})$/, 'AM/$1/$2'],
-        [/https?:\/\/userserve-[a-z]{2}.last.fm\/serve\/[0-9x]+\/([0-9]+).([a-z]{3})/, 'FM/$1/$2'],
+        [/https?:\/\/(userserve|img[0-9])-[a-z]{2}.last.fm\/(?:serve|i\/u)\/[0-9x]+\/([0-9]+)\.([a-z]{3})/, 'FM/$2/$3/$1'],
+        //TODO: Can also be userserve->img# & serve -> i/u
         [/^([A,F]M\/)|(\/[a-z]{3})$|[^\.0-9A-Za-z]+/g, '$1$2']
     ];
     for (var i in toAlbumId)
@@ -104,39 +105,37 @@ function showSearch(view) {
 function addStat() {
     var query = $('#answer :input').val();
     var bootstrapMode = curView != 'song';
-    //Loading sign
-    $.ajax(base + '/search/' + encodeForURI(query) + (bootstrapMode ? '' : '/noGenre' )).done(function(results) {
-        for (var i in results) {
-            var result = results[i];
-            //jshint multistr:true
-            var elem = $('\
-                <div class="card" onclick="selectSong(this);">\
-                    <div class="image"></div>\
-                    <span class="type"></span>\
-                    <span class="name"></span>\
-                </div>\
-            ').attr({
-                'data-img': result.img,
-                'data-id': result.id,
-                'data-query': query,
-                'data-album': result.album
-            });
-            elem.find('.type').text(result.type);
-            elem.find('.image').attr('style', 'background-image: url(' + result.img + ')');
-            switch(result.type) {
-                case 'song':
-                    elem.find('.name').html(result.song + '<br>' + result.artist);
-                break;
-                case 'album':
-                    elem.find('.name').html(result.artist + '<br>' + result.name);
-                break;
-                default:
-                    elem.find('.name').text(result.name);
-                break;
-            }
-            elem.appendTo('#container');
+    //TODO: Show Loading sign
+    $('.ggenre.galbum').attr('title', bootstrapMode ? 'Genres' : 'Albums')
+    absorb(base + '/search/' + encodeForURI(query) + (bootstrapMode ? '' : '/noGenre'), function(result) {
+        //jshint multistr:true
+        var elem = $('\
+            <div class="card" onclick="selectSong(this);">\
+                <div class="image"></div>\
+                <span class="type"></span>\
+                <span class="name"></span>\
+            </div>\
+        ').attr({
+            'data-img': result.img,
+            'data-id': result.id,
+            'data-query': query,
+            'data-album': result.album
+        });
+        elem.find('.type').text(result.type);
+        elem.find('.image').attr('style', 'background-image: url(' + result.img + ')');
+        switch(result.type) {
+            case 'song':
+                elem.find('.name').html(result.song + '<br>' + result.artist);
+            break;
+            case 'album':
+                elem.find('.name').html(result.artist + '<br>' + result.name);
+            break;
+            default:
+                elem.find('.name').text(result.name);
+            break;
         }
-        $('#searchView').addClass('choose');
+        elem.appendTo('#container > .g' + result.type);
+    }, function() {
         co.slimScroll({
             size: '1em',
             position: 'right',
@@ -149,8 +148,9 @@ function addStat() {
             railBorderRadius: '0',
             borderRadius: '0'
         });
-        setTimeout(refreshScroll, 350);
+        //TODO: Hide Loading Sign
     });
+    $('#searchView').addClass('choose');
 }
 
 function selectSong(self) {
@@ -251,16 +251,18 @@ function bootstrapSearch(target, query) {
             $('#bubble').css('background-image', 'url("' + nsImg + '")');
             $('<img/>').attr('src', nsImg).load(function() {
                 var newStat = appendStation(newStation);
+                if (curView == 'firstStation') {
+                    $('#loading').in(350);
+                    setTimeout(function() {
+                        hideSearch();
+                    }, 350);
+                    return initWithStation(data);
+                } else $.sidr('open', 'stat');
                 var bubble = $('#bubble').css({
                     opacity: 1,
                     position: 'fixed'
                 });
-                if (curView == 'firstStation') {
-                    hideSearch();
-                    return loadStation(data);
-                }
                 sFreeze = true;
-                $.sidr('open', 'stat');
                 setTimeout(function() {
                     hideSearch();
                     bubble.animate($.extend(newStat.offset(), {
