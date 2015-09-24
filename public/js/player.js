@@ -1258,6 +1258,50 @@ function init() {
     songs[-1] = {
         songName: 'Radio'
     };
+    
+    $('.icon.clickable').each(function(i,e) {
+        e.onload = function(event) {
+            $(event.target)
+                .contents()
+                .on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
+                    if (!locked)
+                        eval(event.view.frameElement.getAttribute('onclick'));
+                    //I can't for the life of me find a better solution...
+                }))
+                .find('g, g > *').css({
+                    'transition':         'fill 350ms, stroke 200ms',
+                    '-moz-transition':    'fill 350ms, stroke 200ms',
+                    '-webkit-transition': 'fill 350ms, stroke 200ms'
+                })
+            ;
+        }
+    });
+    $('#loadLogo')[0].onload = function() { 
+        $(this).contents().find('g, g > *').css('fill', '#333');
+    };
+    $('#songs')[0].onload = function() {
+        $(this)
+            .contents().find('svg')
+            .on('touchstart click', function() {
+                $.sidr((sidebar === 0) ? 'open' : 'close', 'song');
+            })
+            .on('mouseenter', function() {
+                $.sidr('open', 'song');
+            })
+        ;
+    };
+    $('#stations')[0].onload = function() {
+        $(this)
+            .contents().find('svg')
+            .on('touchstart click', function() {
+                $.sidr((sidebar === 0) ? 'open' : 'close', 'stat');
+            })
+            .on('mouseenter', function() {
+                $.sidr('open', 'stat');
+            })
+        ;
+    };
+    
     if (!options.novisuals) {
         ear.lastTick = Date.now();
         ear.context = typeof AudioContext === 'undefined' ? new webkitAudioContext() : new AudioContext(),
@@ -1341,45 +1385,6 @@ function init() {
         }
     });
 
-    progBar.noUiSlider({
-        start: 0,
-        connect: "lower",
-        range: {
-            min: 0,
-            max: 1
-        }
-    });
-    
-    progBar
-        .on('slide', function() {
-            music().audio.currentTime = progBar.val()*music().duration();
-        })
-        .on('mousedown', function(e) {
-            pb = false;
-        })
-        .on('mouseup', function() {
-            pb = true;
-        })
-    ;
-    initSearch();
-    initFilters();
-};
-
-$(window).load(function() {
-    $('.icon.clickable').each(function() {
-        $(this).contents()
-            .on('click touchstart', 'svg', $.debounce(1000, true, function(event) {
-                if (!locked)
-                    eval(event.view.frameElement.getAttribute('onclick'));
-                //I can't for the life of me find a better solution...
-            }))
-            .find('g, g > *').css({
-                'transition':         'fill 350ms, stroke 200ms',
-                '-moz-transition':    'fill 350ms, stroke 200ms',
-                '-webkit-transition': 'fill 350ms, stroke 200ms'
-            })
-        ;
-    });
     $('#song .container').slimScroll({
         size: '1em',
         position: 'right',
@@ -1416,24 +1421,30 @@ $(window).load(function() {
         railBorderRadius: '0',
         borderRadius: '0'
     });
-    $('#loadLogo').contents().find('g, g > *').css('fill', '#333');
-    $('#songs').contents().find('svg')
-        .on('touchstart click', function() {
-            $.sidr((sidebar === 0) ? 'open' : 'close', 'song');
+
+    progBar.noUiSlider({
+        start: 0,
+        connect: "lower",
+        range: {
+            min: 0,
+            max: 1
+        }
+    });
+    
+    progBar
+        .on('slide', function() {
+            music().audio.currentTime = progBar.val()*music().duration();
         })
-        .on('mouseenter', function() {
-            $.sidr('open', 'song');
+        .on('mousedown', function(e) {
+            pb = false;
+        })
+        .on('mouseup', function() {
+            pb = true;
         })
     ;
-    $('#stations').contents().find('svg')
-        .on('touchstart click', function() {
-            $.sidr((sidebar === 0) ? 'open' : 'close', 'stat');
-        })
-        .on('mouseenter', function() {
-            $.sidr('open', 'stat');
-        })
-    ;
-});
+    initSearch();
+    initFilters();
+};
 
 function showOptions(visible) {
     if (visible) {
