@@ -150,13 +150,11 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                 results: 5,
                 name: query,
                 fuzzy_match: true,
-                //sort: 'familiarity-desc',
                 bucket: 'images'
             }, next);
         },
         function(json, nothing, next) { //Process Artists
-            for (var i in json.response.artists) {
-                var jra = json.response.artists[i];
+            async.each(json.response.artists, function(jra, cb) {
                 var img = '/img/noAlbum.png';
                 for (var j in jra.images) {
                     if (jra.images[j].url.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') == -1) {
@@ -164,13 +162,40 @@ router.get('/search/:query/:noGenres?', require('../user/isAuthenticated'), func
                         break;
                     }
                 }
-                sendEvent({
-                    type: 'artist',
-                    name: jra.name,
-                    id: jra.id,
-                    img: img
-                });
-            }
+                if (img.match(/^http:\/\/userserve-[a-z]{2}\.last\.fm/)) {
+                    lastfm.request('artist.getInfo', {
+                        artist: jra.name, 
+                        handlers: {
+                            success: function(lfmData) {
+                                sendEvent({
+                                    type: 'artist',
+                                    name: jra.name,
+                                    id: jra.id,
+                                    img: lfmData.artist.image[3]['#text'] || '/img/noAlbum.png'
+                                });
+                                cb(null);
+                            },
+                            error: function(lfmData) {
+                                sendEvent({
+                                    type: 'artist',
+                                    name: jra.name,
+                                    id: jra.id,
+                                    img: img
+                                });
+                                cb(null);
+                            }
+                        }
+                    });
+                } else {
+                    sendEvent({
+                        type: 'artist',
+                        name: jra.name,
+                        id: jra.id,
+                        img: img
+                    });
+                    cb(null);
+                }
+            });
             next(null);
         },
         function(next) { //Get songs

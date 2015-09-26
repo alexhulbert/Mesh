@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var moment = require('moment');
 var async = require('async');
+var request = require('request');
 var echo = require('echojs')({
     key: process.env.ECHONEST_KEY
 });
@@ -46,10 +47,14 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
         if (moment(station.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq) || !station.bootstrapped) {
             console.log('!');
             station.bootstrapped = true;
-            echo('tasteprofile/read').get({
-                bucket: 'images',
-                id: station.id
-            }, function(err, json) {
+            var reqStr = 'http://developer.echonest.com/api/v4/tasteprofile/read?' +
+                'bucket=images&' +
+                'bucket=id:musicbrainz&' + 
+                'api_key=' + process.env.ECHONEST_KEY +
+                '&id=' + station.id
+            ;
+            request(reqStr, function(err, response, body) {
+                var json = JSON.parse(body);
                 var favItem;
                 station.timestamp = moment().format('MM-DD-YYYY');
                 if (typeof json.response.catalog === 'undefined') {
@@ -79,9 +84,36 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
                         }
                     });
                 } else {
-                    if (favItem.images.length)
+                    if (favItem.images.length) {
                         subdata.image = station.image = favItem.images[0].url;
-                    return next(station);
+                        var getImg = function() {
+                            var opts = {
+                                handlers: {
+                                    success: function(lfmData) {
+                                        subdata.image = station.image = lfmData.artist.image[3]['#text'];
+                                        next(station);
+                                    },
+                                    error: function(lfmData) {
+                                        next(station);
+                                    }
+                                }
+                            };
+                            var mbid = favItem.foreign_ids[0];
+                            if (mbid)
+                                opts.mbid = mbid.foreign_id.slice(19);
+                            opts.artist = favItem.artist_name;
+                            lastfm.request('artist.getInfo', opts);
+                        };
+                        if (subdata.image.match(/^http:\/\/userserve-[a-z]{2}\.last\.fm/))
+                            getImg();
+                        else
+                            request(subdata.image, function (error, response, body) {
+                                if (error || response.statusCode != 200)
+                                    getImg();
+                                else
+                                    next(station);
+                            });
+                    } else return next(station);
                 }
             });
         } else {
