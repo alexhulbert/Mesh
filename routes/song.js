@@ -4,14 +4,29 @@ var async = require('async');
 var request = require('request').defaults({ encoding: null });
 var moment = require('moment');
 var LastFmNode = require('lastfm').LastFmNode;
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js');
 var lastfm = new LastFmNode({
     api_key:  process.env.LASTFM_KEY,
     secret: process.env.LASTFM_SECRET,
     useragent: 'Mesh'
 });
+var noop = function(){};
+var sevenDigital = require('7digital-api').configure({
+    consumerkey: process.env.SDIGITAL_KEY,
+    consumersecret: process.env.SDIGITAL_SECRET,
+    defaultParams: { country: 'us' },
+    logger: {
+        silly: noop,
+        verbose: noop,
+        info: noop,
+        http: noop,
+        warn: noop,
+        error: function() {
+            console.log.apply(console, arguments);
+        }
+    }
+});
+
 var globalMax = 125;
 
 function translate(req, res, next) {
@@ -150,6 +165,17 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
             var d = data[la];
             d.songName = song;
             d.artistName = artist;
+            var albumCached = false;
+            for (var i in req.user.albums) {
+                if (req.user.albums[i].artistSong == artist + ':' + song) {
+                    albumCached = req.user.albums[i];
+                    break;
+                }
+            }
+            if (albumCached) {
+                d.albumName = albumCached.name;
+                return next(null, true, albumCached.coverArt, la);
+            }
             lastfm.request('track.getInfo', {
                 artist: artist,
                 track: song,
@@ -165,12 +191,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                             if (str.indexOf('http://cdn.last.fm/flatness/catalogue/noimage') === 0) {
                                 next(null, false, null, la);
                             } else {
-                                request.get(str, function(err, response, body) {
-                                    if (!err && response.statusCode == 200) {
-                                        var dataStr = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
-                                        next(null, true, dataStr, la);
-                                    } else next(null, false, null, la);
-                                });
+                                next(null, true, str, la);
                             }
                         }
                     },
@@ -179,6 +200,66 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                     }
                 }
             });
+        },
+        //Try getting Album Art From 7Digital
+        function(hasAlbumArt, url, la, next) {
+            var d = data[la];
+            if (!hasAlbumArt) {
+                var sd = new sevenDigital.Tracks();
+                sd.search({
+                    q: d.artistName + ' ' + d.songName
+                }, function(err, albumData) {
+                    if (
+                        albumData.status == 'ok' &&
+                        albumData.searchResults.searchResult.length
+                    ) {
+                        var track = albumData.searchResults.searchResult[0].track;
+                        var img = track.image || track.release.image || '';
+                        img = img.replace(/_[0-9]+?\.([a-z]{3})$/, '_350.$1');
+                        d.albumName = track.release.title || d.albumName;
+                        if (img) {
+                            console.log('7Digital Album Found');
+                            next(null, true, img, la);
+                        }
+                    } else {
+                        console.log('7Digital Album Not Found');
+                        next(null, hasAlbumArt, url, la);
+                    }
+                });
+            } else next(null, hasAlbumArt, url, la);
+        },
+        //Convert Album URL to bytes and add to cache
+        function(hasAlbumArt, url, la, next) {
+            var toBytes = function() {
+                request.get(url, function(err, response, body) {
+                    if (!err && response.statusCode == 200) {
+                        var dataStr = "data:" + response.headers["content-type"] + ";base64," + new Buffer(body).toString('base64');
+                        next(null, true, dataStr, la);
+                    } else next(null, false, null, la);
+                });
+            };
+            var d = data[la];
+            if (hasAlbumArt) {
+                var albumCached = false;
+                for (var i in req.user.albums) {
+                    if (req.user.albums[i].artistSong == d.artistName + ':' + d.songName) {
+                        albumCached = true;
+                        break;
+                    }
+                }
+                if (!albumCached) {
+                    req.user.albums.unshift({
+                        artistSong: d.artistName + ':' + d.songName,
+                        coverArt: url,
+                        name: d.albumName
+                    });
+                    req.user.albums.splice(5);
+                    req.user.markModified('albums');
+                    req.user.save(function() {
+                        toBytes();
+                    });
+                } else toBytes();
+            }
         },
         //Get Song Metadata
         function(hasAlbumArt, url, la, next) {

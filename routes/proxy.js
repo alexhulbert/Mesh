@@ -12,7 +12,9 @@ router.get('/proxy/:type/:id/:ext/:server?', require('../user/isAuthenticated'),
         if (req.params.type == 'FM') {
             realUrl = 'http://';
             realUrl += server;
-            realUrl += '-ak.last.fm/';
+            realUrl += '-ak.';
+            realUrl += (server == 'userserve') ? 'last' : 'lst';
+            realUrl += '.fm/';
             realUrl += (server == 'userserve') ? 'serve' : 'i/u';
             realUrl += '/300x300/';
         } else {

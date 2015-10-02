@@ -1,9 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var async = require('async');
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js')
 var moment = require('moment');
 var LastFmNode = require('lastfm').LastFmNode;
 var lastfm = new LastFmNode({

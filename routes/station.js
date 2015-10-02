@@ -3,9 +3,7 @@ var router = express.Router();
 var async = require('async');
 var request = require('request');
 var moment = require('moment');
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js');
 var topPlayedMax = 64;
 
 var stationLoad = function(req, res) {
@@ -67,7 +65,8 @@ var stationLoad = function(req, res) {
                 distribution: 'focused',
                 adventurousness: 1,
                 variety: 1,
-                limited_interactivity: true
+                limited_interactivity: true,
+                bucket: 'id:7digital-US'
             };
             var remainingParams = {};
             var filters = GLOBAL.parseFilters(curStation.filters);
@@ -191,7 +190,7 @@ var stationLoad = function(req, res) {
                 recentlyPlayed.push(song);
             }
             if (recentlyPlayed.length) {
-                recentlyPlayed.splice(0, recentlyPlayed.length - 135); //TODO: Tweak This!
+                recentlyPlayed.splice(0, recentlyPlayed.length - 175); //TODO: Tweak This!
                 recentlyPlayed.splice(0, 0, '');
             }
             
@@ -202,7 +201,7 @@ var stationLoad = function(req, res) {
             request(reqStr, function(err, resp, body) {
                 var status = JSON.parse(body);
                 if (status.response.status.code) {
-                    
+                    console.log('ERR REPEAT');
                     console.log(status.response.status.message.match(/SO([A-Z0-9]{16})/g));
                     //Remove if in "topPlayed" or "recent"
                     //Add ${sid} to user::blacklist as string

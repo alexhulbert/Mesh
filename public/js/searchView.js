@@ -9,8 +9,8 @@ function albumToUrl(url, cb) {
     if (url == '/img/noAlbum.png') return cb(url);
     var toAlbumId = [
         [/^.*amazon\.com\/images\/P\/(.+?)\.([a-z]{3})$/, 'AM/$1/$2'],
-        [/https?:\/\/(userserve|img[0-9])-[a-z]{2}.last.fm\/(?:serve|i\/u)\/[0-9x]+\/([0-9]+)\.([a-z]{3})/, 'FM/$2/$3/$1'],
-        //TODO: Can also be userserve->img# & serve -> i/u
+        [/https?:\/\/(userserve|img[0-9])-[a-z]{2}.la?st.fm\/(?:serve|i\/u)\/[0-9x]+\/([0-9]+)\.([a-z]{3})/, 'FM/$2/$3/$1'],
+        //TODO: Can also be userserve->img# & serve -> i/u & last -> lst
         [/^([A,F]M\/)|(\/[a-z]{3})$|[^\.0-9A-Za-z]+/g, '$1$2']
     ];
     for (var i in toAlbumId)

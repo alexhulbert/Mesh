@@ -10,6 +10,7 @@
   },
   "main": "bin/www",
   "dependencies": {
+    "7digital-api": "^0.34.2",
     "async": "^0.9.0",
     "bcrypt-nodejs": "0.0.3",
     "body-parser": "~1.0.0",
@@ -34,6 +35,7 @@
     "nodemailer-smtp-transport": "^0.1.13",
     "passport": "^0.2.1",
     "passport-local": "^1.0.0",
+    "quota": "0.0.3",
     "request": "^2.40.0",
     "serve-favicon": "~2.0.0",
     "stylus": "0.42.3",

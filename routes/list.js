@@ -3,9 +3,6 @@ var router = express.Router();
 var moment = require('moment');
 var async = require('async');
 var request = require('request');
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
 var LastFmNode = require('lastfm').LastFmNode;
 var lastfm = new LastFmNode({
     api_key:  process.env.LASTFM_KEY,

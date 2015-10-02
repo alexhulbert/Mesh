@@ -64,6 +64,8 @@ GLOBAL.stream = function(req, res) {
                 if (typeof info === 'undefined') return videoValid(null);
                 for (var i in info.formats) {
                     var format = info.formats[i];
+                    if (format.audioEncoding == 'vorbis')
+                        format.audioEncoding++;
                     if (
                         format.type.indexOf('audio') === 0 &&
                         format.audioBitrate > findMax.bitrate

@@ -8,6 +8,12 @@ var filter = mongoose.Schema({
     value: String
 });
 
+var album = mongoose.Schema({
+    artistSong: String,
+    coverArt: String,
+    name: String
+});
+
 var station = mongoose.Schema({
     playlist: String,
     prettyName: String,
@@ -39,7 +45,8 @@ var userSchema = mongoose.Schema({
     bookmarks: String,
     uuid: String,
     blacklist: String,
-    mostPlayed: mongoose.Schema.Types.Mixed
+    mostPlayed: mongoose.Schema.Types.Mixed,
+    albums: [album]
 });
 
 userSchema.pre('save', function(next) {

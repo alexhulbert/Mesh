@@ -1,8 +1,6 @@
 var express = require('express');
 var router = express.Router();
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js');
 
 router.get('/feedback/:sid/:funct/:song?/:rating?', require('../user/isAuthenticated'), function(req, res) {
     var song = (typeof req.params.song === 'undefined') ? 'last' : req.params.song;

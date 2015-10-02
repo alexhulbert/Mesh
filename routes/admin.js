@@ -70,4 +70,16 @@ router.get('/admin/remove/:user', require('../user/isAuthenticated'), requireAdm
     } else res.end('0');
 });
 
+router.get('/admin/sudo/:user', require('../user/isAuthenticated'), requireAdmin, function(req, res) {
+    Model.user.findOne({ email: req.params.user }, function(err, user) {
+        if (user) {
+            req.logIn(user, function(err) {
+                res.end(err ? 'UNKNOWN ERROR' : 'SUCCESS');
+            });
+        } else {
+            res.end('USER NOT FOUND');
+        }
+    });
+});
+
 module.exports = router;

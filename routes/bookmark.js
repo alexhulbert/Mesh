@@ -1,8 +1,5 @@
 var express = require('express');
 var router = express.Router();
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
 
 router.get('/:funct(bookmark|unbookmark|bookmarks)/:song?', require('../user/isAuthenticated'), function(req, res) {
     var updateAnyway = false;

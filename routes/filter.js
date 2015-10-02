@@ -3,9 +3,7 @@ var router = express.Router();
 var moment = require('moment');
 var locks = GLOBAL.db.get('locks');
 var async = require('async');
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js');
 var freq = 60;
 
 GLOBAL.getChoices = function(cb) {

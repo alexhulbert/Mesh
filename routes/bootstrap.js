@@ -2,9 +2,7 @@ var express = require('express');
 var router = express.Router();
 var async = require('async');
 var request = require('request');
-var echo = require('echojs')({
-    key: process.env.ECHONEST_KEY
-});
+var echo = require('../echo.js');
 var locks = GLOBAL.db.get('locks');
 
 /*
