@@ -1197,6 +1197,7 @@ function getStations() {
 }
 
 function timeUpdate() {
+    if (!music().duration) return;
     var elapsed = music().audio.currentTime;
     var total = music().duration();
     var remaining = total - elapsed;

@@ -95,9 +95,9 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
                                     }
                                 }
                             };
-                            var mbid = favItem.foreign_ids[0];
-                            if (mbid)
-                                opts.mbid = mbid.foreign_id.slice(19);
+                            var mbid = favItem.foreign_ids;
+                            if (mbid && mbid.length)
+                                opts.mbid = mbid[0].foreign_id.slice(19);
                             opts.artist = favItem.artist_name;
                             lastfm.request('artist.getInfo', opts);
                         };
