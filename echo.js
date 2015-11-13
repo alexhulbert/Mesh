@@ -34,7 +34,7 @@ module.exports = function(p, pp) {
                     console.log('OUT OF QUOTA!');
                 })
                 .catch(function(err) {
-                    console.error('QOUTA ERROR!');
+                    console.error('QUOTA ERROR!', err);
                 })
             ;
         };

@@ -9,9 +9,9 @@ function albumToUrl(url, cb) {
     if (url == '/img/noAlbum.png') return cb(url);
     var toAlbumId = [
         [/^.*amazon\.com\/images\/P\/(.+?)\.([a-z]{3})$/, 'AM/$1/$2'],
-        [/https?:\/\/(userserve|img[0-9])-[a-z]{2}.la?st.fm\/(?:serve|i\/u)\/[0-9x]+\/([0-9]+)\.([a-z]{3})/, 'FM/$2/$3/$1'],
+        [/https?:\/\/(userserve|img[0-9])-[a-z]{2}.la?st.fm\/(?:serve|i\/u)\/[0-9x]+\/([0-9a-f]+)\.([a-z]{3})/, 'FM/$2/$3/$1'],
         //TODO: Can also be userserve->img# & serve -> i/u & last -> lst
-        [/^([A,F]M\/)|(\/[a-z]{3})$|[^\.0-9A-Za-z]+/g, '$1$2']
+        [/^([A,F]M\/)|(userserve|img[0-9])$|(\/[a-z]{3})|[^\.0-9A-Za-z]+/g, '$2$3$1']
     ];
     for (var i in toAlbumId)
         url = url.replace(toAlbumId[i][0], toAlbumId[i][1]);
@@ -169,25 +169,17 @@ function playSearch(target, query) {
         case 'song': 
             var songArtist = target.find('.name').html().split('<br>');
             albumToUrl(target.find('.image').attr('style').slice(22, -1), function(dataStr) {
-                var getMetadata = function(len) {
-                    colorGen([{
-                        id:         target.data('id'),
-                        songName:   songArtist[0],
-                        artistName: songArtist[1],
-                        albumName:  target.data('album'),
-                        albumUrl:   dataStr,
-                        len: len && parseFloat(len)
-                    }], function(searchRes) {
-                        playSong(searchRes, 'next');
-                    });
-                };
-                if (options.audioWorkaround) {
-                    $.ajax(
-                        base + '/stream/' +
-                        encodeForURI(songArtist[1]) + '/' +
-                        encodeForURI(songArtist[0]) + '/metadata'
-                    ).done(getMetadata);
-                } else getMetadata();
+                colorGen([{
+                    id:         target.data('id'),
+                    songName:   songArtist[0],
+                    artistName: songArtist[1],
+                    albumName:  target.data('album'),
+                    albumUrl:   dataStr,
+                    len: len && parseFloat(len),
+                    needsMD: options.audioWorkaround
+                }], function(searchRes) {
+                    playSong(searchRes, 'next');
+                });
             });
         break;
         case 'album':

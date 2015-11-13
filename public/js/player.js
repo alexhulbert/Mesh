@@ -424,7 +424,7 @@ var visCookie = Cookies.get('novisuals');
 if (visCookie != 'force' && typeof AudioContext === 'undefined' && typeof webkitAudioContext === 'undefined') {
     options.novisuals = 'force';
     Cookies.set('novisuals', 'force');
-} else if (wrkCookie == 'no' || typeof wrkCookie === 'undefined') {
+} else if (visCookie == 'no' || typeof visCookie === 'undefined') {
     options.novisuals = false; //Default
 } else {
     options.novisuals = visCookie;
@@ -850,6 +850,7 @@ function next() {
 }
 
 function playSong(data, type, cb) {
+    console.log(Array.slice.call(arguments, 0));
     var funct;
     switch(type) {
         case 'last':
@@ -919,14 +920,27 @@ function mesh(ind, part, callback) {
             cb();
         }
     } else {
+        var whenDone = function() {
+            if (part & 1) load(soin);
+            if (part & 2) {
+                curSong = ind;
+                UI.draw(soin);
+                playQueue();
+            }
+            cb();
+        };
         var soin = songs[ind];
-        if (part & 1) load(soin);
-        if (part & 2) {
-            curSong = ind;
-            UI.draw(soin);
-            playQueue();
-        }
-        cb();
+        if (soin.needsMD) {
+            $.ajax(
+                base + '/stream/' +
+                encodeForURI(soin.artistName) + '/' +
+                encodeForURI(soin.songName) + '/metadata'
+            ).done(function(len) {
+                songs[ind].needsMD = false;
+                songs[ind].len = len;
+                whenDone();
+            });
+        } else whenDone();
     }
 }
 

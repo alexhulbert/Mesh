@@ -36,7 +36,7 @@ function refreshFilters(index) {
                 )
                 .insertAfter('#manageView > div:first-child')
             ;
-            theme.recolor(color, $('body').hasClass('light'));
+            UI.recolor(color, $('body').hasClass('light'));
         }
     });
 }

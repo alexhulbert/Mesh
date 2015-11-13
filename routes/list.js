@@ -41,7 +41,7 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
             });
         };
 
-        if (moment(station.timestamp, 'MM-DD-YYYY').diff(moment(), 'days') < (1 - freq) || !station.bootstrapped) {
+        if (!station.bootstrapped) {
             console.log('!');
             station.bootstrapped = true;
             var reqStr = 'http://developer.echonest.com/api/v4/tasteprofile/read?' +

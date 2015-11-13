@@ -68,7 +68,7 @@ GLOBAL.stream = function(req, res) {
                         format.audioEncoding--;
                     if (
                         format.type.indexOf('audio') === 0 &&
-                        format.audioBitrate > findMax.bitrate
+                        format.audioBitrate >= findMax.bitrate
                     ) {
                         findMax.bitrate = format.audioBitrate;
                         findMax.id = i;
