@@ -37,7 +37,7 @@ function translate(req, res, next) {
 
 //Overhead doubles as Squeezebox cache negator
 router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user/isAuthenticated'), function(req, res) {
-    res.setHeader('Cache-Control', 'no-cache';)
+    res.setHeader('Cache-Control', 'no-cache');
     var workaround =
         ~(req.params.overhead || '').indexOf('legacy') ||
         ~(req.params.fileName || '').indexOf('legacy') || 
