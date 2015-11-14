@@ -175,7 +175,6 @@ function playSearch(target, query) {
                     artistName: songArtist[1],
                     albumName:  target.data('album'),
                     albumUrl:   dataStr,
-                    len: len && parseFloat(len),
                     needsMD: options.audioWorkaround
                 }], function(searchRes) {
                     playSong(searchRes, 'next');
@@ -194,26 +193,15 @@ function playSearch(target, query) {
                         albumUrl: searchRes.albumUrl,
                         color: searchRes.color,
                         albumName: albumArtist[1],
+                        needsMD: options.audioWorkaround
                     };
                     var songsInAlbum = [];
                     var procNextSong = function(songs) {
                         if (!songs.length) return playSong(songsInAlbum, 'next');
                         var songInAlbum = songs[0];
                         var realSong = $.extend({}, baseData, songInAlbum);
-                        if (options.audioWorkaround) {
-                            $.ajax(
-                                base + '/stream/' +
-                                encodeForURI(songInAlbum.artistName) + '/' +
-                                encodeForURI(songInAlbum.songName) + '/metadata'
-                            ).done(function(len) {
-                                realSong.len = parseFloat(len);
-                                if (realSong.len) songsInAlbum.push(realSong);
-                                procNextSong(songs.slice(1));
-                            });
-                        } else {
-                            songsInAlbum.push(realSong);
-                            procNextSong(songs.slice(1));
-                        }
+                        songsInAlbum.push(realSong);
+                        procNextSong(songs.slice(1));
                     }
                     var albumId;
                     if (id)

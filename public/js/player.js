@@ -850,7 +850,6 @@ function next() {
 }
 
 function playSong(data, type, cb) {
-    console.log(Array.slice.call(arguments, 0));
     var funct;
     switch(type) {
         case 'last':

@@ -37,6 +37,7 @@ function translate(req, res, next) {
 
 //Overhead doubles as Squeezebox cache negator
 router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user/isAuthenticated'), function(req, res) {
+    res.setHeader('Cache-Control', 'no-cache';)
     var workaround =
         ~(req.params.overhead || '').indexOf('legacy') ||
         ~(req.params.fileName || '').indexOf('legacy') || 
@@ -223,7 +224,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                         }
                     } else {
                         console.log('7Digital Album Not Found');
-                        next(null, hasAlbumArt, url, la);
+                        next(null, false, null, la);
                     }
                 });
             } else next(null, hasAlbumArt, url, la);
@@ -259,7 +260,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                         toBytes();
                     });
                 } else toBytes();
-            }
+            } else next(null, false, null, la);
         },
         //Get Song Metadata
         function(hasAlbumArt, url, la, next) {
