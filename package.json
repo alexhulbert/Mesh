@@ -40,6 +40,6 @@
     "serve-favicon": "~2.0.0",
     "stylus": "0.42.3",
     "validator": "^3.24.0",
-    "ytdl-core": "^0.7.6"
+    "ytdl-core": "^0.7.7"
   }
 }
