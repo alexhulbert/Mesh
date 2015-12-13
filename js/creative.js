@@ -66,4 +66,7 @@
     // Initialize WOW.js Scrolling Animations
     new WOW().init();
 
+    var email = "alexhulbert.com";
+    var email = "mailto:" + 'alex' + '\x40' + email;
+    $('#mail').attr('href', email);
 })(jQuery); // End of use strict
