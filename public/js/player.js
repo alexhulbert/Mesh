@@ -467,15 +467,15 @@ var curErrors = 0;
 
 var onNoSong = /*$.throttle(500, false,*/ function(e) {
     if (++curErrors >= maxErrors) return;
-    var ecode = 0;
+    var aud;
     if (e.currentTarget)
-        ecode = e.currentTarget.error.code;
+        aud = e.currentTarget;
     else if (e.path)
-        ecode = e.path[0].error.code;
-    switch (ecode) {
+        aud = e.path[0];
+    switch (+aud && aud.error.code) {
         case 4:
             var proceed = function() {
-                console.log("ERROR LOADING SONG!", e);
+                console.log("ERROR LOADING SONG!", aud.error);
                 var preloading = !!music().audio.currentTime;
                 //Remove Song current song if no Preload, remove next song if preload
                 if (!preloading || curSong != songs.length - 1) {
@@ -520,17 +520,16 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
                     }
                 });
             } else proceed();
-            
         break;
         case 2:
             console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
-            var resumeLength = e.path[0].currentTime;
+            var resumeLength = aud.currentTime;
             music().audio.load();
             music().audio.currentTime = resumeLength;
             music().audio.play();
         break;
         default:
-            console.log("UNHANDLED SONG ERROR!", e.path[0].error);
+            console.log("UNHANDLED SONG ERROR!", aud && aud.error);
         break;
     }
 };

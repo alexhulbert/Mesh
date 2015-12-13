@@ -210,6 +210,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                 sd.search({
                     q: d.artistName + ' ' + d.songName
                 }, function(err, albumData) {
+                    if (err || !albumData.status) return next(null, false, null, la);
                     if (
                         albumData.status == 'ok' &&
                         albumData.searchResults.searchResult.length
