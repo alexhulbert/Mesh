@@ -820,7 +820,15 @@ function music() {
     return musicPlayer[mIndex];
 }
 
-function loadStation(sid, callback) {
+function loadStation(sid, callback, manual) {
+    if (manual) {
+        if (locked) return;
+        lock();
+        if (inQueue) {
+            inQueue = false;
+            
+        }
+    }
     $('.station:not(.nowPlaying)').removeClass('current');
     var newStat = $('.station[data-id=' + sid + ']').addClass('current');
     $('.nowPlaying')
@@ -832,11 +840,11 @@ function loadStation(sid, callback) {
         feedbackHistory[sid] = JSON.parse(data);
         curStation = sid;
         if (typeof callback === 'undefined') {
-            isRunning = true;
             next();
-            play();
-        } else callback();
-        unlock();
+        } else {
+            callback();
+            unlock();
+        }
     });
 }
 
@@ -855,6 +863,7 @@ function playSong(data, type, cb) {
             funct = function(d) {
                 songs.push(d);
                 updateHistory('add', songs.length - 1);
+                if (curSong == songs.length - 1 && !isRunning) play();
                 if (cb) cb();
             };
         break;
@@ -862,6 +871,7 @@ function playSong(data, type, cb) {
             funct = function(d) {
                 songs.splice(curSong + 1, 0, d);
                 updateHistory('add', curSong + 1);
+                if (!isRunning) play();
                 if (cb) cb();
             };
         break;
@@ -911,7 +921,7 @@ function mesh(ind, part, callback) {
         } else if (part & 2) {
             songs.push(nextData);
             curSong = ind;
-            updateHistory('add', songs.length - 1);
+            updateHistory('add', curSong);
             UI.draw(nextData);
             nextData = undefined;
             playQueue();
@@ -967,6 +977,7 @@ function deleteStation(id, event) {
 
 
 function updateHistory(action, param) {
+    console.log(param);
     switch(action) {
         case 'remove':
             $('.circleCard[data-id="' + param + '"], #stat .container > [data-id="' + param + '"]').remove();
@@ -1347,8 +1358,7 @@ function init() {
     con.click($.debounce(5000, true, function(e) {
         var target = $(e.target).closest('.station');
         if (target.length && !target.hasClass('add')) {
-            lock();
-            loadStation(target[0].dataset.id);
+            loadStation(target[0].dataset.id, undefined, true);
         }
     }));
     

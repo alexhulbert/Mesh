@@ -26,6 +26,7 @@ var station = mongoose.Schema({
     image: String,
     filters: [filter],
     lastUpdated: String,
+    seeds: String,
     feedback: mongoose.Schema.Types.Mixed
 });
 

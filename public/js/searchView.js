@@ -163,6 +163,15 @@ function selectSong(self) {
     funct(target, query);
 }
 
+function expandSearch(target, query) {
+    var id = target.data('id');
+    $.ajax(base + '/variety/add/' + chosenStation).done(function(data) {
+        if (data.indexOf('ERR:') === 0) {
+            //TODO: ERROR HANDLING
+        }
+    });
+}
+
 function playSearch(target, query) {
     var id = target.data('id');
     switch(target.find('.type').text()) {
