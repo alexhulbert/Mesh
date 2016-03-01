@@ -41,6 +41,7 @@ var colorThief = new ColorThief();
 var ear = { refresh: 50 };
 var locked = false;
 var donePreloading = false;
+var elapsed = 0;
 var likeStatus = {
     NEUTRAL: 0,
     LIKE: 1,
@@ -472,7 +473,7 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         aud = e.currentTarget;
     else if (e.path)
         aud = e.path[0];
-    switch (+aud && aud.error.code) {
+    switch (aud.error.code) {
         case 4:
             var proceed = function() {
                 console.log("ERROR LOADING SONG!", aud.error);
@@ -523,9 +524,8 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
         break;
         case 2:
             console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
-            var resumeLength = aud.currentTime;
             music().audio.load();
-            music().audio.currentTime = resumeLength;
+            music().audio.currentTime = elapsed;
             music().audio.play();
         break;
         default:
@@ -1221,7 +1221,7 @@ function getStations() {
 
 function timeUpdate() {
     if (!music().duration) return;
-    var elapsed = music().audio.currentTime;
+    elapsed = music().audio.currentTime;
     var total = music().duration();
     var remaining = total - elapsed;
 
