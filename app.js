@@ -68,6 +68,19 @@ app.use(function(err, req, res, next) {
     });
 });
 
+
+process.on('uncaughtException', function(err) {
+    if (err.code == 'ECONNRESET') {
+        //See https://github.com/fent/node-ytdl-core/issues/65
+        console.log('Got an ECONNRESET!');
+        console.log(err.stack);
+    } else {
+        console.log(err);
+        console.log(err.stack);
+        process.exit(0);
+    }
+});
+
 console.log("READY!");
 
 module.exports = app;
