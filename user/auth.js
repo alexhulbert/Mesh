@@ -6,8 +6,8 @@ var async = require('async');
 var crypto = require('crypto');
 var nodemailer = require('nodemailer');
 var validator = require('validator');
-var smtpTransport = nodemailer.createTransport(/*require('nodemailer-smtp-transport')(*/{
-    service: process.env.EMAIL_SERVICE,
+var smtpTransport = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE || 'gmail',
     auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD
@@ -37,7 +37,7 @@ module.exports = function(passport) {
                 subject: 'Mesh - Email Verification',
                 text: 'Welcome to Mesh!\n\n'
                     + 'To activate your account and get started, click the following link:\n'
-                    + process.env.URL + '/user/verify/' + token
+                    + process.env.URL + '/user/verify/' + tokehn
             };
             smtpTransport.sendMail(mailOptions, function(err) {
                 if (flash) req.flash('signupMessage', 'Done! Please check your email for further instructions.');
@@ -55,7 +55,7 @@ module.exports = function(passport) {
                 user.activated = true;
                 user.save(function() {
                     req.logIn(user, function() {
-                        res.redirect('/');
+                        res.redirect('/user/login');
                         next();
                     });
                 });
@@ -72,15 +72,15 @@ module.exports = function(passport) {
     };
     
     passport.getReset = function(req, res) {
-        User.findOne({ verifyToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
+        User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } }, function(err, user) {
             if (!user) {
-                req.flash('error', 'Password reset token is invalid or has expired.');
+                req.flash('forgotMessage', 'Password reset token is invalid or has expired.');
                 return res.redirect('/user/forgot');
+            } else {
+                res.render('reset', {
+                    title: 'Change Password'
+                });
             }
-            
-            res.render('reset', {
-                user: req.user
-            });
         });
     };
     
@@ -116,10 +116,10 @@ module.exports = function(passport) {
                     from: 'bot@' + process.env.URL.replace(/^.*?:\/\//, ''),
                     subject: 'Mesh - Your password has been changed',
                     text: 'Hello,\n\n'
-                        + 'This is a confirmation that the password for your account ' + user.email + ' has just been changed.\n'
+                        + 'This is a confirmation that the password for your account (' + user.email + ') has just been changed.\n'
                 };
                 smtpTransport.sendMail(mailOptions, function(err) {
-                    req.flash('resetMessage', 'Success! Your password has been changed.');
+                    req.flash('loginMessage', '<style>body.bad #subtitle,body.bad #err{color:#11BF11 !important}</style>Success! Your password has been changed.')
                     done(err);
                 });
             }
@@ -129,6 +129,10 @@ module.exports = function(passport) {
     };
     
     passport.forgot = function(req, res, next) {
+        if (req.body.email.indexOf(/(opml)|(KEY_)/) != -1 || !validator.isEmail(req.body.email)) {
+            req.flash('forgotMessage', 'Invalid email');
+            return res.redirect('/user/forgot');
+        }
         async.waterfall([
             function(done) {
                 crypto.randomBytes(20, function(err, buf) {
@@ -146,7 +150,7 @@ module.exports = function(passport) {
                     }
             
                     user.resetPasswordToken = token;
-                    user.resetPasswordExpires = Date.now() + 3600000; //1 hour
+                    user.resetPasswordExpires = Date.now() + 864e5; //1 day
             
                     user.save(function(err) {
                         done(err, token, user);
@@ -158,19 +162,23 @@ module.exports = function(passport) {
                     to: user.email,
                     from: 'bot@' + process.env.URL.replace(/^.*?:\/\//, ''),
                     subject: 'Mesh - Password Reset',
-                    text: 'You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\n' +
+                    text: 'You are receiving this because you have requested a password reset for your account.\n\n' +
                         'Please click on the following link, or paste this into your browser to complete the process:\n\n' +
-                        process.env.URL + '/reset/' + token + '\n\n' +
+                        process.env.URL + '/user/reset/' + token + '\n\n' +
                         'If you did not request this, please ignore this email and your password will remain unchanged.\n'
                 };
                 smtpTransport.sendMail(mailOptions, function(err) {
-                    req.flash('forgotMessage', 'An e-mail has been sent to ' + user.email + ' with further instructions.');
+                    console.log(err);
                     done(err, 'done');
+                    res.render('static', {
+                        title: 'Password Reset',
+                        message: 'Confirmation Email Sent',
+                        subtitle: 'Check your email for further instructions'
+                    });
                 });
             }
         ], function(err) {
             if (err) return next(err);
-            res.redirect('/user/forgot');
         });
     };
     

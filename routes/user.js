@@ -10,6 +10,16 @@ router.get('/user/authenticated', function(req, res) {
     res.end(+req.isAuthenticated()+"");
 });
 
+//Welcome Page
+
+router.get('/welcome', function(req, res) {
+    res.render('static', {
+        title: 'Welcome',
+        message: 'Welcome to Mesh!',
+        subtitle: 'Check your email to get started'
+    });
+});
+
 //Get User Model
 
 router.get('/user/model', require('../user/isAuthenticated'), function(req, res) {
@@ -93,7 +103,12 @@ router.get('/user/signup', function(req, res) {
 //Forgot Password
 
 router.post('/user/forgot', passport.forgot);
-router.get('/user/forgot'); //TODO: Build this
+router.get('/user/forgot', function(req, res) {
+	res.render('forgot', {
+        title: 'Recover Password',
+        error: req.flash('forgotMessage')
+    });
+});
 
 //Reset Password
 

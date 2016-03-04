@@ -1,0 +1,22 @@
+extends ./master.jade
+
+block css
+ | /css/auth.css
+ | /css/signup.css
+
+block scripts
+ | /js/passconf.js
+
+block content
+  #override
+    #top
+      img#logo(src='/img/logo.svg')
+      span#url MESH
+    span#subtitle SET PASSWORD
+    form#fields(method='post')
+      input#password.input(type='password', name='password')
+      label#pass.label NEW PASSWORD
+      input#confirm.input(type='password', name='confirm')
+      label#conf.label CONFIRM PASSWORD
+      #btn
+        button(onclick='sendform(event)') SUBMIT

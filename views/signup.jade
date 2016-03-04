@@ -4,6 +4,9 @@ block css
  | /css/auth.css
  | /css/signup.css
 
+block scripts
+ | /js/passconf.js
+
 block content
   #override
     #top
@@ -20,7 +23,7 @@ block content
       input#betakey.input(name='key')
       label#key.label INVITE CODE
       #btn
-        button(onclick='submit();') SUBMIT
+        button(onclick='sendform(event);') SUBMIT
     #register Already have an account?&nbsp;
       u
         a(href='/user/login') Log in here!

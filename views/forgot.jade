@@ -2,31 +2,25 @@ extends ./master.jade
 
 block css
  | /css/auth.css
+ | /css/forgot.css
 
 block content
   #top
     img#logo(src='/img/logo.svg')
     span#url MESH
-  span#subtitle LOG IN
+  span#subtitle RECOVER PASSWORD
   form#fields(method='post')
     input#email.input(name='email')
     label#uname.label YOUR EMAIL ADDRESS
-    input#password.input(type='password', name='password')
-    label#pass.label PASSWORD
     #btn
       button SUBMIT
   #register
-    | Don't have an account?&nbsp;
+    | Remembered your password?&nbsp;
     u
-      a(href='/user/signup') Make one here!
-    br
-    br
-    | Forgot your password?&nbsp;
-    u
-      a(href='/user/forgot') Reset it
+      a(href='/user/login') Log In
   if error != ''
     script(type='text/javascript').
       document.body.onload = function() {
           document.body.setAttribute("class", "bad");
       }
-    span#err !{error}
+    span#err #{error}

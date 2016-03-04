@@ -523,9 +523,14 @@ var onNoSong = /*$.throttle(500, false,*/ function(e) {
             } else proceed();
         break;
         case 2:
-            console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
+            if (!options.audioWorkaround) {
+                options.audioWorkaround = true;
+                Cookies.set('workaround', 'yes');
+            } else console.log("AUDIO STREAM INTERRUPTED! RECOVERING...");
+            var oldTime = elapsed;
+            music().audio.currentTime = 0
             music().audio.load();
-            music().audio.currentTime = elapsed;
+            music().audio.currentTime = oldTime;
             music().audio.play();
         break;
         default:

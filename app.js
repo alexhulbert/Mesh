@@ -68,7 +68,7 @@ app.use(function(err, req, res, next) {
     });
 });
 
-
+/*
 process.on('uncaughtException', function(err) {
     if (err.code == 'ECONNRESET') {
         //See https://github.com/fent/node-ytdl-core/issues/65
@@ -80,6 +80,7 @@ process.on('uncaughtException', function(err) {
         process.exit(0);
     }
 });
+*/
 
 console.log("READY!");
 
