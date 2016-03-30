@@ -228,6 +228,9 @@ var stationUnload = function(req, res, doDelete) {
         if (doDelete) {
             var fid = curStation.id;
             req.user.stations.splice(req.params.sid, 1);
+            if (req.user.badStations && ~req.user.badStations.indexOf(req.params.sid)) {
+                req.user.badStations.splice(req.user.badStations.indexOf(req.params.sid), 1);
+            }
             for (var i = 0; i < req.user.stations.length; i++)
                 req.user.stations[i].index = i;
             if (

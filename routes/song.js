@@ -70,6 +70,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
             results: 1 + req.params.overhead,
             lookahead: 1
         }, function(err, json) {
+            if (!req.user.badStations) req.user.badStations = [];
             if (typeof json.response.songs === 'undefined' || json.response.songs.length < 1
              || typeof json.response.lookahead === 'undefined' || json.response.lookahead.length < 1) {
                 var method;
@@ -86,7 +87,6 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                         }
                     }
                     req.user.lastStation = workingId;
-                    if (!req.user.badStations) req.user.badStations = [];
                     req.user.badStations.push(req.params.sid);
                     method = "/station/load/" + workingId;
                 }
@@ -104,6 +104,7 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
                     });
                 });
             } else {
+                
                 var bsInd = req.user.badStations.indexOf(req.params.sid);
                 if (~bsInd) {
                     req.user.badStations.splice(bsInd, 1);
