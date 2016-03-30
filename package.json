@@ -35,9 +35,11 @@
     "nodemailer-smtp-transport": "^0.1.13",
     "passport": "^0.2.1",
     "passport-local": "^1.0.0",
+    "pump": "^1.0.1",
     "quota": "0.0.3",
     "request": "^2.40.0",
     "serve-favicon": "~2.0.0",
+    "spawn-stream": "^1.0.2",
     "stylus": "0.42.3",
     "validator": "^3.24.0",
     "ytdl-core": "^0.7.12"

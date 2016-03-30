@@ -7,6 +7,8 @@ var proc = require('child_process');
 var request = require('request');
 var async = require('async');
 var path = require('path');
+var SpawnStream = require('spawn-stream');
+var pump = require('pump');
 
 var safePattern = /^[a-z0-9_\/\-.,?:@#%^+=\[\]{}|&()<>; *']*$/i;
 function bashEscape(arg) {
@@ -91,7 +93,10 @@ GLOBAL.stream = function(req, res) {
                     } else {
                         var data = info.formats[findMax.id];
                         var ytReq = request(data.url);
-                        ytReq.pipe(res);
+                        pump(ytReq, res, function(err) {
+                            res.end('');
+                            if (err) console.log(err);
+                        });
                         res.setHeader('Accept-Ranges', 'bytes');
                         res.setHeader('Content-Length', data.clen);
                         res.setHeader('Content-Range', util.format('bytes 0-%d/%d', data.clen - 1, data.clen));
@@ -120,14 +125,14 @@ GLOBAL.stream = function(req, res) {
                         );
                     }
                     cmdOpts.push('-f', 'mp3', '-');
-                    var ffmpeg_child = proc.spawn(path.join(process.env.FFMPEG_DIR, 'ffmpeg'), cmdOpts);
-                    ffmpeg_child.stdout.pipe(res);
-                    
+                    var ffmpeg = SpawnStream(path.join(process.env.FFMPEG_DIR, 'ffmpeg'), cmdOpts);;
                     var ytdlStream = ytdl.downloadFromInfo(info, {
                         quality: 'highest'
                     });
-                    ytdlStream.on('error', function() { res.end(''); });
-                    ytdlStream.pipe(ffmpeg_child.stdin);
+                    pump(ytdlStream, ffmpeg, res, function(err) {
+                        res.end('');
+                        if (err) console.log(err);
+                    })
                     return videoValid(true);
                 }
             });
