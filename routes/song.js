@@ -72,11 +72,43 @@ router.get('/grab/:type/:sid/:overhead?/:fileName?', translate, require('../user
         }, function(err, json) {
             if (typeof json.response.songs === 'undefined' || json.response.songs.length < 1
              || typeof json.response.lookahead === 'undefined' || json.response.lookahead.length < 1) {
-                console.log(JSON.stringify(json.response));
-                //TODO: LET USER KNOW NO MORE SONGS
-                res.end();
-                next("ERR");
+                var method;
+                if (json.response.status.code == '-1') {
+                    method = "/station/unload/" + req.params.sid;
+                } else {
+                    var workingId = ((req.params.sid === 0 ? req.user.stations.length : req.params.sid) - 1);
+                    if (~req.user.badStations.indexOf(+workingId)) {
+                        for (var i = req.user.stations.length - 1; i >= 0; i--) {
+                            if (!~req.user.badStations.indexOf(i)) {
+                                workingId = i;
+                                break;
+                            }
+                        }
+                    }
+                    req.user.lastStation = workingId;
+                    if (!req.user.badStations) req.user.badStations = [];
+                    req.user.badStations.push(req.params.sid);
+                    method = "/station/load/" + workingId;
+                }
+                req.user.save(function() {
+                    request({
+                        url: 'http://' + process.env.IP + ':' + process.env.PORT + method,
+                        headers: {
+                            Cookie: req.headers.cookie
+                        }
+                    }, function(err, resp, body) {
+                        if (json.response.status.code == '-1')
+                            res.redirect(req.originalUrl);
+                        res.end("[{},{}]");
+                        next("ERR");
+                    });
+                });
             } else {
+                var bsInd = req.user.badStations.indexOf(req.params.sid);
+                if (~bsInd) {
+                    req.user.badStations.splice(bsInd, 1);
+                    req.user.markModified('badStations');
+                }
                 var jrs = json.response.songs[req.params.overhead];
                 var jrl = json.response.lookahead[0];
                 if (!req.user.recent)

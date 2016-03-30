@@ -53,6 +53,8 @@ var feedbackHistory = [];
 var ratio = -2;
 var hasAlbum = false;
 var tabid = null;
+var badStations = [];
+var numStations = 0;
 vex.defaultOptions.className = 'vex-theme-flat-attack';
 
 //II - Visuals & UI
@@ -443,7 +445,7 @@ window.addEventListener('error', function(err) {
         err.message + '\n' + 
         err.filename + lineAndColumnInfo + '\n' +
         navigator.userAgent + '\n' +
-        'Current Song: ' + songs[curSong].id + '\n' +
+        'Current Song: ' +   + '\n' +
         'Previous Song: ' + songs[curSong && curSong - 1].id + '\n'
     );
 });
@@ -831,7 +833,6 @@ function loadStation(sid, callback, manual) {
         lock();
         if (inQueue) {
             inQueue = false;
-            
         }
     }
     $('.station:not(.nowPlaying)').removeClass('current');
@@ -842,7 +843,22 @@ function loadStation(sid, callback, manual) {
     ;
 
     $.ajax(base + '/station/load/' + sid).done(function(data) {
-        feedbackHistory[sid] = JSON.parse(data);
+        var jsonData = JSON.parse(data);
+        if (!jsonData.session) {
+            var workingId = curStation;
+            if (~badStations.indexOf(+workingId)) {
+                for (var i = numStations - 1; i >= 0; i--) {
+                    if (!~badStations.indexOf(i)) {
+                        workingId = i;
+                        break;
+                    }
+                }
+            }
+            return loadStation(workingId, callback, manual);
+        } else if (~badStations.indexOf(sid)) {
+            badStations.splice(badStations.indexOf(sid), 1);
+        }
+        feedbackHistory[sid] = jsonData;
         curStation = sid;
         if (typeof callback === 'undefined') {
             next();
@@ -1049,6 +1065,22 @@ function newSong(cb, skip) {
     //TODO: Improve song lookahead logic (globalOverhead)
     $.ajax(base + '/grab/station/' + curStation + (options.audioWorkaround ? '/legacy' : '')).done(function(data) {
         //globalOverhead = 0;
+        var jsonData = JSON.parse(data);
+        if (Object.getOwnPropertyNames(jsonData[0]).length === 0) {
+            var workingId = curStation;
+            if (~badStations.indexOf(+workingId)) {
+                for (var i = numStations - 1; i >= 0; i--) {
+                    if (!~badStations.indexOf(i)) {
+                        workingId = i;
+                        break;
+                    }
+                }
+            }
+            loadStation(workingId, function() {
+                newSong(cb, skip);
+            });
+            return;
+        }
         colorGen(JSON.parse(data), function(first, second) {
             var statFeedback = feedbackHistory[curStation];
             for (var i in statFeedback.likes) {
@@ -1206,7 +1238,17 @@ function initWithStation(index) {
 function getStations() {
     $.ajax(base + '/stations').done(function(res) {
         var data = JSON.parse(res);
+        badStations = data.badStations;
+        numStations = data.stations.length;
         whoami = data.email || whoami;
+        if (data.badStations.length) {
+            var message = "The following stations currently have issues:<br><br>";
+            for (var i in data.badStations) {
+                message += data.stations[data.badStations[i]].name + '<br>';
+            }
+            message += "<br>Please delete theses stations or remove some filters."
+            vex.dialog.alert(message);
+        }
         if (data.stations.length) {
             for (var i in data.stations) {
                 var station = data.stations[i];

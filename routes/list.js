@@ -135,6 +135,7 @@ router.get('/stations/:sidKey?', translate, require('../user/isAuthenticated'), 
                 res.end(JSON.stringify({
                     stations: data,
                     lastStation: req.user.lastStation,
+                    badStations: req.user.badStations || [],
                     email: req.user.email
                 }));
             }

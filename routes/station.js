@@ -200,7 +200,9 @@ var stationLoad = function(req, res) {
             ;
             request(reqStr, function(err, resp, body) {
                 var status = JSON.parse(body);
-                if (status.response.status.code) {
+                if (status.response.status.code == 5) {
+                    req.end("{}");
+                } else if (status.response.status.code) {
                     console.log('ERR REPEAT');
                     console.log(status.response.status.message.match(/SO([A-Z0-9]{16})/g));
                     //Remove if in "topPlayed" or "recent"

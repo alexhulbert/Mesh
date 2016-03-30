@@ -47,6 +47,7 @@ var userSchema = mongoose.Schema({
     uuid: String,
     blacklist: String,
     mostPlayed: mongoose.Schema.Types.Mixed,
+    badStations: mongoose.Schema.Types.Mixed,
     albums: [album]
 });
 
